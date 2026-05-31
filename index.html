@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Zahi Finance — Consultoria Zahi</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg0:#05090f;--bg1:#080e1a;--bg2:#0d1422;
+  --card:#101826;--border:#1a2840;--border2:#243552;
+  --blue:#2563eb;--blueL:#60a5fa;--blueXL:#93c5fd;
+  --blueD:rgba(37,99,235,0.14);--blueDD:rgba(37,99,235,0.07);
+  --green:#10b981;--greenL:#34d399;--greenD:rgba(16,185,129,0.13);
+  --red:#ef4444;--redD:rgba(239,68,68,0.13);
+  --amber:#f59e0b;--amberD:rgba(245,158,11,0.13);
+  --purple:#8b5cf6;--purpleD:rgba(139,92,246,0.13);
+  --cyan:#06b6d4;--cyanD:rgba(6,182,212,0.13);
+  --t1:#f0f4ff;--t2:#8da4c4;--t3:#3d5470;
+}
+body{font-family:'Sora',sans-serif;background:var(--bg0);color:var(--t1);height:100vh;overflow:hidden;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ── AUTH SCREEN ── */
+#auth-screen{position:fixed;inset:0;background:var(--bg0);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.auth-box{background:var(--bg1);border:1px solid var(--border2);border-radius:20px;padding:44px 40px;width:100%;max-width:420px;box-shadow:0 40px 80px rgba(0,0,0,.8);}
+.auth-logo{width:54px;height:54px;background:linear-gradient(135deg,#1d4ed8,var(--blue));border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:26px;color:#fff;box-shadow:0 0 24px rgba(37,99,235,.35);}
+.auth-field{margin-bottom:16px;}
+.auth-label{font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;}
+.auth-input{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;color:var(--t1);font-size:13px;font-family:'Sora',sans-serif;outline:none;width:100%;transition:border .15s;}
+.auth-input:focus{border-color:var(--blue);}
+.auth-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;transition:opacity .15s;margin-top:4px;}
+.auth-btn:hover{opacity:.88;}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed;}
+.auth-msg{font-size:12px;text-align:center;margin-bottom:14px;display:none;padding:8px 12px;border-radius:7px;}
+.auth-msg.error{background:var(--redD);color:var(--red);}
+.auth-msg.success{background:var(--greenD);color:var(--greenL);}
+
+/* ── LOADING ── */
+#loading-screen{position:fixed;inset:0;background:var(--bg0);display:none;align-items:center;justify-content:center;z-index:8888;flex-direction:column;gap:16px;}
+.spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── APP ── */
+#app-screen{display:none;height:100vh;flex-direction:row;}
+#sidebar{width:228px;min-width:228px;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden;flex-shrink:0;}
+#sidebar.collapsed{width:0;min-width:0;}
+.logo-area{padding:20px 18px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,#1d4ed8,var(--blue));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;color:#fff;flex-shrink:0;box-shadow:0 0 16px rgba(37,99,235,.3);}
+.logo-text-main{font-size:14px;font-weight:700;color:var(--t1);line-height:1.2;}
+.logo-text-sub{font-size:9.5px;color:var(--t3);line-height:1.2;}
+nav{flex:1;padding:12px 10px;overflow-y:auto;}
+.nav-section-label{font-size:9px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:8px 8px 4px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;margin-bottom:2px;font-size:12.5px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .15s ease;white-space:nowrap;}
+.nav-item:hover{background:var(--blueDD);color:var(--blueXL);}
+.nav-item.active{background:var(--blueD);color:var(--blueL);}
+.nav-item svg{flex-shrink:0;}
+.nav-chev{margin-left:auto;opacity:0;}
+.nav-item.active .nav-chev{opacity:1;}
+.sidebar-footer{padding:14px 18px;border-top:1px solid var(--border);}
+.sidebar-footer-text{font-size:9px;color:var(--t3);text-align:center;line-height:1.7;}
+.sidebar-footer-brand{color:var(--blueL);font-weight:600;}
+#main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+#topbar{background:var(--bg1);border-bottom:1px solid var(--border);padding:0 22px;height:58px;display:flex;align-items:center;gap:14px;flex-shrink:0;}
+.topbar-title{font-size:15px;font-weight:700;color:var(--t1);}
+.topbar-sub{font-size:10px;color:var(--t3);margin-top:1px;}
+.topbar-spacer{flex:1;}
+.period-badge{background:var(--blueD);border:1px solid var(--border2);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--blueL);font-weight:600;}
+.user-badge{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 12px 4px 8px;cursor:pointer;}
+.user-avatar{width:24px;height:24px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
+.user-name{font-size:11px;color:var(--t2);font-weight:500;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.logout-btn{background:none;border:none;cursor:pointer;color:var(--t3);display:flex;align-items:center;padding:4px;border-radius:6px;transition:color .15s;}
+.logout-btn:hover{color:var(--red);}
+.menu-btn{background:none;border:none;cursor:pointer;color:var(--t2);display:flex;align-items:center;padding:4px;}
+.menu-btn:hover{color:var(--t1);}
+#content{flex:1;overflow-y:auto;padding:22px;}
+.fade-in{animation:fadeIn .3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;}
+.card-pad{padding:20px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.kpi-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+.kpi-label{font-size:10px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.kpi-icon{border-radius:7px;padding:7px;display:flex;align-items:center;justify-content:center;}
+.kpi-value{font-size:20px;font-weight:700;color:var(--t1);margin-bottom:5px;letter-spacing:-.3px;}
+.kpi-trend{font-size:11px;display:flex;align-items:center;gap:4px;}
+.trend-up{color:var(--green);}
+.trend-down{color:var(--red);}
+.kpi-sub{color:var(--t3);font-size:10px;}
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:16px;}
+.charts-row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.section-title{font-size:13.5px;font-weight:600;color:var(--t1);}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{padding:9px 12px;text-align:left;font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:10px 12px;font-size:12px;color:var(--t2);border-bottom:1px solid rgba(26,40,64,.5);}
+tr:hover td{background:rgba(255,255,255,.015);}
+.td-strong{color:var(--t1);font-weight:600;}
+.td-money-green{color:var(--greenL);font-weight:700;font-size:13px;}
+.td-money-red{color:var(--red);font-weight:700;font-size:13px;}
+
+/* ── CHIPS ── */
+.chip{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.chip-green{background:var(--greenD);color:var(--greenL);}
+.chip-red{background:var(--redD);color:var(--red);}
+.chip-amber{background:var(--amberD);color:var(--amber);}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;border:none;cursor:pointer;transition:all .15s ease;font-family:'Sora',sans-serif;}
+.btn:hover{opacity:.88;}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-ghost{background:var(--border);color:var(--t2);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+
+/* ── FILTERS ── */
+.select-f{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--t1);font-size:12px;font-family:'Sora',sans-serif;outline:none;}
+.select-f:focus{border-color:var(--blue);}
+
+/* ── MODAL ── */
+.modal-wrap{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-wrap.open{display:flex;}
+.modal-box{background:var(--bg1);border:1px solid var(--border2);border-radius:16px;padding:28px;width:100%;max-width:500px;box-shadow:0 30px 60px rgba(0,0,0,.6);animation:fadeIn .2s ease;}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+.modal-title{font-size:15px;font-weight:700;color:var(--t1);}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-full{grid-column:1/-1;}
+.form-label{font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;display:block;}
+.form-input,.form-select{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--t1);font-size:12.5px;font-family:'Sora',sans-serif;outline:none;width:100%;}
+.form-input:focus,.form-select:focus{border-color:var(--blue);}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;}
+
+/* ── DRE ── */
+.dre-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;}
+.dre-row.sep{border-top:1px solid var(--border);margin-top:6px;padding-top:14px;}
+.dre-row.indent1{padding-left:20px;}
+.dre-label{font-size:12.5px;color:var(--t2);}
+.dre-label.bold{font-weight:700;color:var(--t1);}
+.dre-val{font-size:13px;font-weight:700;}
+
+/* ── INSIGHTS ── */
+.insight-card{display:flex;gap:12px;padding:13px 14px;border-radius:9px;margin-bottom:10px;}
+.insight-icon{font-size:18px;flex-shrink:0;line-height:1.4;}
+.insight-text{font-size:12px;color:var(--t1);line-height:1.65;}
+
+/* ── ALERTS ── */
+.alert-item{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--redD);border-radius:8px;border:1px solid rgba(239,68,68,.2);margin-bottom:8px;}
+.alert-desc{font-size:11.5px;font-weight:600;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.alert-sub{font-size:10px;color:var(--t2);}
+.alert-val{font-size:12px;font-weight:700;color:var(--red);flex-shrink:0;}
+
+/* ── PIE LEGEND ── */
+.pie-legend{display:flex;flex-direction:column;gap:7px;margin-top:14px;}
+.pie-legend-item{display:flex;align-items:center;justify-content:space-between;}
+.pie-legend-dot{width:8px;height:8px;border-radius:2px;margin-right:7px;flex-shrink:0;}
+.pie-legend-name{font-size:11px;color:var(--t2);display:flex;align-items:center;}
+.pie-legend-val{font-size:11px;font-weight:700;color:var(--t1);}
+
+/* ── CONFIG ── */
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.profile-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.profile-avatar{width:56px;height:56px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;}
+
+/* ── VIEWS ── */
+.view{display:none;}
+.view.active{display:block;}
+
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .kpi-grid-4{grid-template-columns:repeat(2,1fr);}
+  .charts-row{grid-template-columns:1fr;}
+  .charts-row2{grid-template-columns:1fr;}
+  .config-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH SCREEN ══ -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div style="text-align:center;margin-bottom:30px;">
+      <div class="auth-logo" style="margin-bottom:14px;">Z</div>
+      <div style="font-size:22px;font-weight:700;color:var(--t1)" id="auth-title">Entrar na conta</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:5px">Zahi Finance — Consultoria Zahi</div>
+    </div>
+    <div id="nome-field" style="display:none" class="auth-field">
+      <label class="auth-label">Nome completo</label>
+      <input id="auth-nome" class="auth-input" type="text" placeholder="Seu nome"/>
+    </div>
+    <div class="auth-field">
+      <label class="auth-label">E-mail</label>
+      <input id="auth-email" class="auth-input" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')handleAuth()"/>
+    </div>
+    <div class="auth-field">
+      <label class="auth-label">Senha</label>
+      <input id="auth-password" class="auth-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()"/>
+    </div>
+    <div id="auth-msg" class="auth-msg"></div>
+    <button id="auth-btn" class="auth-btn" onclick="handleAuth()">Entrar</button>
+    <div style="text-align:center;margin-top:20px;font-size:12px;color:var(--t3)">
+      <span id="auth-toggle-text">Não tem conta?</span>
+      <span id="auth-toggle-link" onclick="toggleAuthMode()" style="color:var(--blueL);cursor:pointer;font-weight:600;margin-left:4px">Cadastre-se</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOADING ══ -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--t3)">Carregando seus dados...</div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app-screen">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="logo-area">
+      <div class="logo-icon">Z</div>
+      <div>
+        <div class="logo-text-main">Zahi Finance</div>
+        <div class="logo-text-sub">Gestão Financeira</div>
+      </div>
+    </div>
+    <nav>
+      <div class="nav-section-label">Menu Principal</div>
+      <div class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+        <svg class="nav-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="navigate('receitas')" id="nav-receitas">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Receitas
+        <svg class="nav-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="navigate('despesas')" id="nav-despesas">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+        Despesas
+        <svg class="nav-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="navigate('receber')" id="nav-receber">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
+        Contas a Receber
+        <svg class="nav-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="navigate('pagar')" id="nav-pagar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Contas a Pagar
+        <svg class="nav-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="navigate('fluxo')" id="nav-fluxo">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Fluxo de Caixa
+        <svg class="nav-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="navigate('dre')" id="nav-dre">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        DRE Gerencial
+        <svg class="nav-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="navigate('comparativos')" id="nav-comparativos">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Comparativos
+        <svg class="nav-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="nav-item" onclick="navigate('config')" id="nav-config">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2"/></svg>
+        Configurações
+        <svg class="nav-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-text">Desenvolvido pela<br/><span class="sidebar-footer-brand">Consultoria Zahi</span><br/>Mentorias e Consultorias</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div id="main-area">
+    <header id="topbar">
+      <button class="menu-btn" onclick="toggleSidebar()">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div>
+        <div class="topbar-title" id="topbar-title">Dashboard</div>
+        <div class="topbar-sub" id="topbar-sub"></div>
+      </div>
+      <div class="topbar-spacer"></div>
+      <div class="period-badge" id="period-badge"></div>
+      <div class="user-badge">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span class="user-name" id="user-name">...</span>
+      </div>
+      <button class="logout-btn" onclick="logout()" title="Sair da conta">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </header>
+
+    <div id="content">
+
+      <!-- DASHBOARD -->
+      <div class="view active fade-in" id="view-dashboard">
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Receita Total <div class="kpi-icon" style="background:var(--greenD)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div>
+            <div class="kpi-value" id="kpi-receita">R$ 0,00</div>
+            <div class="kpi-trend"><span class="kpi-sub" id="kpi-receita-sub">mês atual</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Despesas Totais <div class="kpi-icon" style="background:var(--redD)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div>
+            <div class="kpi-value" id="kpi-despesas">R$ 0,00</div>
+            <div class="kpi-trend"><span class="kpi-sub">mês atual</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Lucro Líquido <div class="kpi-icon" style="background:var(--blueD)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blueL)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div>
+            <div class="kpi-value" id="kpi-lucro" style="color:var(--blueL)">R$ 0,00</div>
+            <div class="kpi-trend"><span class="kpi-sub">mês atual</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Margem de Lucro <div class="kpi-icon" style="background:var(--purpleD)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></div></div>
+            <div class="kpi-value" id="kpi-margem" style="color:var(--purple)">0%</div>
+            <div class="kpi-trend"><span class="kpi-sub">sobre receita recebida</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">A Receber <div class="kpi-icon" style="background:var(--amberD)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg></div></div>
+            <div class="kpi-value" id="kpi-receber" style="color:var(--amber)">R$ 0,00</div>
+            <div class="kpi-trend"><span class="kpi-sub" id="kpi-receber-ct">0 lançamentos</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">A Pagar <div class="kpi-icon" style="background:var(--cyanD)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div></div>
+            <div class="kpi-value" id="kpi-pagar" style="color:var(--cyan)">R$ 0,00</div>
+            <div class="kpi-trend"><span class="kpi-sub" id="kpi-pagar-ct">0 lançamentos</span></div>
+          </div>
+        </div>
+        <div class="charts-row">
+          <div class="card card-pad">
+            <div class="section-header">
+              <span class="section-title">Evolução Financeira — <span id="chart-year"></span></span>
+              <span style="font-size:10px;color:var(--t3)">Receita · Despesa · Lucro</span>
+            </div>
+            <div style="position:relative;height:200px"><canvas id="chartEvolucao"></canvas></div>
+          </div>
+          <div class="card card-pad">
+            <div class="section-header"><span class="section-title">Receitas por Classificação</span></div>
+            <div style="position:relative;height:160px"><canvas id="chartPie"></canvas></div>
+            <div class="pie-legend" id="pie-legend"></div>
+          </div>
+        </div>
+        <div class="charts-row2">
+          <div class="card card-pad">
+            <div class="section-header"><span class="section-title">Rec. × Desp. × Lucro por Mês</span></div>
+            <div style="position:relative;height:180px"><canvas id="chartBar"></canvas></div>
+          </div>
+          <div class="card card-pad">
+            <div class="section-header"><span class="section-title">⚠️ Alertas — Atrasados</span></div>
+            <div id="alerts-container"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECEITAS -->
+      <div class="view fade-in" id="view-receitas">
+        <div class="kpi-grid-4" id="kpi-receitas-grid"></div>
+        <div class="card card-pad">
+          <div class="section-header">
+            <span class="section-title">Lançamentos de Receitas</span>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <select class="select-f" id="filter-rec-mes" onchange="renderReceitas()"></select>
+              <select class="select-f" id="filter-rec-status" onchange="renderReceitas()">
+                <option value="">Todos status</option>
+                <option value="recebido">Recebidos</option>
+                <option value="pendente">Pendentes</option>
+                <option value="atrasado">Atrasados</option>
+              </select>
+              <button class="btn btn-primary" onclick="openModal('receita')">+ Nova Receita</button>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="table-receitas"><thead><tr><th>Data</th><th>Cliente</th><th>Descrição</th><th>Classificação</th><th>Valor</th><th>Status</th><th>Forma</th><th></th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- DESPESAS -->
+      <div class="view fade-in" id="view-despesas">
+        <div class="kpi-grid-4" id="kpi-despesas-grid"></div>
+        <div class="card card-pad">
+          <div class="section-header">
+            <span class="section-title">Lançamentos de Despesas</span>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <select class="select-f" id="filter-desp-mes" onchange="renderDespesas()"></select>
+              <select class="select-f" id="filter-desp-status" onchange="renderDespesas()">
+                <option value="">Todos status</option>
+                <option value="pago">Pagos</option>
+                <option value="pendente">Pendentes</option>
+                <option value="atrasado">Atrasados</option>
+              </select>
+              <button class="btn btn-danger" onclick="openModal('despesa')">+ Nova Despesa</button>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="table-despesas"><thead><tr><th>Data</th><th>Fornecedor</th><th>Descrição</th><th>Classificação</th><th>Valor</th><th>Status</th><th>Forma</th><th></th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- CONTAS A RECEBER -->
+      <div class="view fade-in" id="view-receber">
+        <div class="kpi-grid" id="kpi-receber-grid"></div>
+        <div class="card card-pad">
+          <div class="section-header"><span class="section-title">Contas a Receber — Pendentes e Atrasadas</span></div>
+          <div class="table-wrap"><table id="table-receber"><thead><tr><th>Data</th><th>Cliente</th><th>Descrição</th><th>Classificação</th><th>Valor</th><th>Status</th><th>Forma</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- CONTAS A PAGAR -->
+      <div class="view fade-in" id="view-pagar">
+        <div class="kpi-grid" id="kpi-pagar-grid"></div>
+        <div class="card card-pad">
+          <div class="section-header"><span class="section-title">Contas a Pagar — Pendentes e Atrasadas</span></div>
+          <div class="table-wrap"><table id="table-pagar"><thead><tr><th>Data</th><th>Fornecedor</th><th>Descrição</th><th>Classificação</th><th>Valor</th><th>Status</th><th>Forma</th></tr></thead><tbody></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- FLUXO DE CAIXA -->
+      <div class="view fade-in" id="view-fluxo">
+        <div class="kpi-grid-4" id="kpi-fluxo-grid"></div>
+        <div class="card card-pad" style="margin-bottom:16px">
+          <div class="section-header"><span class="section-title" id="fluxo-title">Evolução do Caixa</span><span style="font-size:10px;color:var(--t3)">Acumulado por semana</span></div>
+          <div style="position:relative;height:220px"><canvas id="chartFluxo"></canvas></div>
+        </div>
+        <div class="card card-pad">
+          <div class="section-header"><span class="section-title">Detalhamento de Lançamentos</span></div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th><th>Status</th></tr></thead><tbody id="fluxo-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DRE -->
+      <div class="view fade-in" id="view-dre">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card card-pad">
+            <div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+              <div style="font-size:15px;font-weight:700;color:var(--t1)">DRE Gerencial — Demonstração do Resultado</div>
+              <div style="font-size:11px;color:var(--t3);margin-top:4px" id="dre-subtitle">Base: lançamentos cadastrados</div>
+            </div>
+            <div id="dre-content"></div>
+          </div>
+          <div class="card card-pad">
+            <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:16px">📊 Insights Gerenciais</div>
+            <div id="insights-content"></div>
+            <div style="margin-top:20px;padding:14px;background:var(--blueDD);border-radius:8px;border:1px solid var(--blueD)">
+              <div style="font-size:10px;color:var(--blueL);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Meta de Faturamento</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span style="font-size:12px;color:var(--t2)" id="meta-label">Progresso do mês</span>
+                <span style="font-size:13px;font-weight:700;color:var(--blueL)" id="meta-progress">0%</span>
+              </div>
+              <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+                <div id="meta-bar" style="height:100%;background:linear-gradient(90deg,var(--blue),var(--blueL));border-radius:3px;transition:width .5s ease;width:0%"></div>
+              </div>
+              <div style="font-size:10px;color:var(--t3);margin-top:6px">Meta: <span id="meta-val">R$ 20.000,00</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARATIVOS -->
+      <div class="view fade-in" id="view-comparativos">
+        <div class="kpi-grid" id="kpi-comp-grid"></div>
+        <div class="charts-row2">
+          <div class="card card-pad">
+            <div class="section-header"><span class="section-title">Receita vs. Lucro</span></div>
+            <div style="position:relative;height:200px"><canvas id="chartCompReceita"></canvas></div>
+          </div>
+          <div class="card card-pad">
+            <div class="section-header"><span class="section-title">Margem de Lucro por Mês</span></div>
+            <div style="position:relative;height:200px"><canvas id="chartCompMargem"></canvas></div>
+          </div>
+        </div>
+        <div class="card card-pad">
+          <div class="section-header"><span class="section-title">Tabela Comparativa Mensal</span></div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Mês</th><th>Receita</th><th>Despesas</th><th>Lucro</th><th>Margem</th><th>Var. Receita</th><th>Var. Lucro</th></tr></thead><tbody id="comp-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIGURAÇÕES -->
+      <div class="view fade-in" id="view-config">
+        <div class="card card-pad">
+          <div class="profile-header">
+            <div class="profile-avatar">🏢</div>
+            <div>
+              <div style="font-size:16px;font-weight:700;color:var(--t1)">Perfil da Empresa</div>
+              <div style="font-size:12px;color:var(--t3);margin-top:3px">Dados salvos automaticamente no banco de dados</div>
+            </div>
+          </div>
+          <div class="config-grid">
+            <div><label class="form-label">Nome da Empresa</label><input class="form-input" id="cfg-nome-empresa" placeholder="Nome da empresa"/></div>
+            <div><label class="form-label">Responsável</label><input class="form-input" id="cfg-responsavel" placeholder="Nome do responsável"/></div>
+            <div><label class="form-label">CNPJ / CPF</label><input class="form-input" id="cfg-cnpj" placeholder="CNPJ ou CPF"/></div>
+            <div><label class="form-label">Segmento de Atuação</label><input class="form-input" id="cfg-segmento" placeholder="Segmento"/></div>
+            <div><label class="form-label">E-mail</label><input class="form-input" id="cfg-email" placeholder="E-mail comercial"/></div>
+            <div><label class="form-label">Telefone</label><input class="form-input" id="cfg-telefone" placeholder="Telefone"/></div>
+            <div><label class="form-label">Meta Mensal de Faturamento (R$)</label><input class="form-input" type="number" id="cfg-meta-fat" placeholder="0,00"/></div>
+            <div><label class="form-label">Meta de Lucro (R$)</label><input class="form-input" type="number" id="cfg-meta-lucro" placeholder="0,00"/></div>
+            <div><label class="form-label">Saldo Inicial (R$)</label><input class="form-input" type="number" id="cfg-saldo-inicial" placeholder="0,00"/></div>
+            <div><label class="form-label">Regime Tributário</label>
+              <select class="form-select" id="cfg-regime">
+                <option>Simples Nacional</option>
+                <option>Lucro Presumido</option>
+                <option>Lucro Real</option>
+                <option>MEI</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
+            <button class="btn btn-ghost" onclick="loadPerfil()">Cancelar</button>
+            <button class="btn btn-primary" id="cfg-save-btn" onclick="savePerfil()">Salvar Configurações</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-area -->
+
+  <!-- MODAL -->
+  <div class="modal-wrap" id="modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-title">Novo Lançamento</span>
+        <button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button>
+      </div>
+      <div class="form-grid">
+        <div><label class="form-label">Data</label><input class="form-input" type="date" id="form-data"/></div>
+        <div><label class="form-label">Valor (R$)</label><input class="form-input" type="number" id="form-valor" placeholder="0,00" step="0.01"/></div>
+        <div class="form-full"><label class="form-label" id="form-pessoa-label">Cliente</label><input class="form-input" id="form-pessoa" placeholder="Nome do cliente"/></div>
+        <div class="form-full"><label class="form-label">Descrição</label><input class="form-input" id="form-descricao" placeholder="Descreva o lançamento"/></div>
+        <div><label class="form-label">Classificação</label><select class="form-select" id="form-classificacao"></select></div>
+        <div><label class="form-label" id="form-forma-label">Forma de Recebimento</label>
+          <select class="form-select" id="form-forma">
+            <option>PIX</option><option>Transferência</option><option>Boleto</option><option>Cartão</option><option>Débito Automático</option><option>Dinheiro</option>
+          </select>
+        </div>
+        <div><label class="form-label">Status</label><select class="form-select" id="form-status"></select></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" id="modal-save-btn" onclick="saveTransaction()">Salvar Lançamento</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app-screen -->
+
+<script>
+// ══════════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════════
+const SUPA_URL = 'https://pzdtbyfyifsmjnjcoupd.supabase.co'
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6ZHRieWZ5aWZzbWpuamNvdXBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNzUyMDcsImV4cCI6MjA5NTc1MTIwN30.CsrF2fNX28i6v82YMCJ1NO1dzouel2h6nJJCmz61Ia0'
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY)
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let receitas = []
+let despesas = []
+let perfilData = {}
+let currentUser = null
+let currentModalType = ''
+let chartEv, chartPie, chartBar, chartFluxo, chartCR, chartCM
+
+const NOW = new Date()
+const CUR_YEAR = NOW.getFullYear()
+const CUR_MONTH_KEY = `${CUR_YEAR}-${String(NOW.getMonth()+1).padStart(2,'0')}`
+const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+const MONTH_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
+const CLASSIF_R = ['Consultoria','Honorários','Serviços prestados','Comissão','Mensalidade','Venda de produto','Receita recorrente','Receita eventual','Outros']
+const CLASSIF_D = ['Aluguel','Impostos','Pró-labore','Marketing','Contabilidade','Internet','Colaboradores','Despesas administrativas','Transporte','Sistemas','Outros']
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+const fmt = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0)
+const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('pt-BR') : '—'
+const sumBy = (arr, pred) => arr.filter(pred).reduce((s,x) => s+(x.valor||0), 0)
+
+function chipHTML(s) {
+  const m = {recebido:'chip chip-green',pago:'chip chip-green',pendente:'chip chip-amber',atrasado:'chip chip-red'}
+  const l = {recebido:'Recebido',pago:'Pago',pendente:'Pendente',atrasado:'Atrasado'}
+  return `<span class="${m[s]||'chip'}">${l[s]||s}</span>`
+}
+
+function kpiSmall(label, val, color, sub='') {
+  return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value" style="color:${color};font-size:18px">${val}</div>${sub?`<div class="kpi-trend"><span class="kpi-sub">${sub}</span></div>`:''}</div>`
+}
+
+function computeMonthly() {
+  const months = []
+  for (let m = 0; m < 12; m++) {
+    const key = `${CUR_YEAR}-${String(m+1).padStart(2,'0')}`
+    const mr = receitas.filter(r => r.data && r.data.startsWith(key))
+    const md = despesas.filter(d => d.data && d.data.startsWith(key))
+    const rec = sumBy(mr, r => r.status === 'recebido')
+    const dep = sumBy(md, d => d.status === 'pago')
+    if (rec > 0 || dep > 0) months.push({mes: MONTH_SHORT[m], receita: rec, despesa: dep, lucro: rec - dep})
+  }
+  return months.length ? months : [{mes: MONTH_SHORT[NOW.getMonth()], receita:0, despesa:0, lucro:0}]
+}
+
+function buildMonthFilters() {
+  const months = []
+  for (let m = NOW.getMonth(); m >= 0; m--) {
+    const key = `${CUR_YEAR}-${String(m+1).padStart(2,'0')}`
+    months.push({key, label: `${MONTH_NAMES[m]} ${CUR_YEAR}`})
+  }
+  const optsHTML = months.map((m,i) => `<option value="${m.key}"${i===0?' selected':''}>${m.label}</option>`).join('')
+  const allOpt = '<option value="">Todos os meses</option>'
+  document.getElementById('filter-rec-mes').innerHTML = optsHTML + allOpt
+  document.getElementById('filter-desp-mes').innerHTML = optsHTML + allOpt
+}
+
+// ══════════════════════════════════════════════
+// AUTH UI
+// ══════════════════════════════════════════════
+let authMode = 'login'
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'signup' : 'login'
+  document.getElementById('auth-title').textContent = authMode === 'login' ? 'Entrar na conta' : 'Criar conta'
+  document.getElementById('auth-btn').textContent = authMode === 'login' ? 'Entrar' : 'Criar conta'
+  document.getElementById('auth-toggle-text').textContent = authMode === 'login' ? 'Não tem conta?' : 'Já tem conta?'
+  document.getElementById('auth-toggle-link').textContent = authMode === 'login' ? 'Cadastre-se' : 'Fazer login'
+  document.getElementById('nome-field').style.display = authMode === 'signup' ? 'block' : 'none'
+  clearAuthMsg()
+}
+
+function showAuthMsg(msg, type='error') {
+  const el = document.getElementById('auth-msg')
+  el.textContent = msg
+  el.className = `auth-msg ${type}`
+  el.style.display = 'block'
+}
+
+function clearAuthMsg() {
+  document.getElementById('auth-msg').style.display = 'none'
+}
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim()
+  const password = document.getElementById('auth-password').value
+  const nome = document.getElementById('auth-nome').value.trim()
+  if (!email || !password) { showAuthMsg('Preencha e-mail e senha.'); return }
+
+  const btn = document.getElementById('auth-btn')
+  btn.textContent = 'Aguarde...'
+  btn.disabled = true
+
+  if (authMode === 'login') {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password })
+    if (error) {
+      const msg = error.message.includes('Invalid') ? 'E-mail ou senha incorretos.' : error.message
+      showAuthMsg(msg)
+      btn.textContent = 'Entrar'; btn.disabled = false
+      return
+    }
+    currentUser = data.user
+    await enterApp()
+  } else {
+    const { error } = await sb.auth.signUp({ email, password, options: { data: { nome } } })
+    if (error) { showAuthMsg(error.message); btn.textContent = 'Criar conta'; btn.disabled = false; return }
+    showAuthMsg('Cadastro realizado! Verifique seu e-mail para confirmar a conta.', 'success')
+    btn.textContent = 'Criar conta'; btn.disabled = false
+  }
+}
+
+async function logout() {
+  await sb.auth.signOut()
+  currentUser = null; receitas = []; despesas = []; perfilData = {}
+  document.getElementById('app-screen').style.display = 'none'
+  document.getElementById('auth-screen').style.display = 'flex'
+  document.getElementById('auth-email').value = ''
+  document.getElementById('auth-password').value = ''
+  clearAuthMsg()
+  if(authMode !== 'login') toggleAuthMode()
+}
+
+// ══════════════════════════════════════════════
+// DATA LAYER
+// ══════════════════════════════════════════════
+async function loadAllData() {
+  document.getElementById('loading-screen').style.display = 'flex'
+  document.getElementById('app-screen').style.display = 'none'
+
+  const [{ data: r }, { data: d }, { data: p }] = await Promise.all([
+    sb.from('receitas').select('*').order('data', {ascending: false}),
+    sb.from('despesas').select('*').order('data', {ascending: false}),
+    sb.from('perfis').select('*').eq('user_id', currentUser.id).maybeSingle()
+  ])
+
+  receitas = r || []
+  despesas = d || []
+  perfilData = p || {}
+
+  document.getElementById('loading-screen').style.display = 'none'
+  document.getElementById('app-screen').style.display = 'flex'
+}
+
+async function addReceita(item) {
+  const { data, error } = await sb.from('receitas').insert({
+    user_id: currentUser.id, ...item
+  }).select().single()
+  if (error) { alert('Erro ao salvar: ' + error.message); return null }
+  receitas.unshift(data)
+  return data
+}
+
+async function removeReceita(id) {
+  const { error } = await sb.from('receitas').delete().eq('id', id)
+  if (error) { alert('Erro ao excluir: ' + error.message); return }
+  receitas = receitas.filter(r => r.id !== id)
+  renderReceitas()
+}
+
+async function addDespesa(item) {
+  const { data, error } = await sb.from('despesas').insert({
+    user_id: currentUser.id, ...item
+  }).select().single()
+  if (error) { alert('Erro ao salvar: ' + error.message); return null }
+  despesas.unshift(data)
+  return data
+}
+
+async function removeDespesa(id) {
+  const { error } = await sb.from('despesas').delete().eq('id', id)
+  if (error) { alert('Erro ao excluir: ' + error.message); return }
+  despesas = despesas.filter(d => d.id !== id)
+  renderDespesas()
+}
+
+async function savePerfil() {
+  const btn = document.getElementById('cfg-save-btn')
+  btn.textContent = 'Salvando...'; btn.disabled = true
+
+  const payload = {
+    user_id: currentUser.id,
+    nome_empresa: document.getElementById('cfg-nome-empresa').value,
+    responsavel: document.getElementById('cfg-responsavel').value,
+    cnpj: document.getElementById('cfg-cnpj').value,
+    segmento: document.getElementById('cfg-segmento').value,
+    email_empresa: document.getElementById('cfg-email').value,
+    telefone: document.getElementById('cfg-telefone').value,
+    meta_faturamento: parseFloat(document.getElementById('cfg-meta-fat').value)||20000,
+    meta_lucro: parseFloat(document.getElementById('cfg-meta-lucro').value)||12000,
+    saldo_inicial: parseFloat(document.getElementById('cfg-saldo-inicial').value)||0,
+    regime_tributario: document.getElementById('cfg-regime').value
+  }
+
+  const { data, error } = await sb.from('perfis').upsert(payload, {onConflict:'user_id'}).select().single()
+  if (error) { alert('Erro ao salvar: ' + error.message) }
+  else { perfilData = data; alert('Configurações salvas com sucesso!') }
+
+  btn.textContent = 'Salvar Configurações'; btn.disabled = false
+}
+
+function loadPerfil() {
+  document.getElementById('cfg-nome-empresa').value = perfilData.nome_empresa || ''
+  document.getElementById('cfg-responsavel').value = perfilData.responsavel || ''
+  document.getElementById('cfg-cnpj').value = perfilData.cnpj || ''
+  document.getElementById('cfg-segmento').value = perfilData.segmento || ''
+  document.getElementById('cfg-email').value = perfilData.email_empresa || ''
+  document.getElementById('cfg-telefone').value = perfilData.telefone || ''
+  document.getElementById('cfg-meta-fat').value = perfilData.meta_faturamento || 20000
+  document.getElementById('cfg-meta-lucro').value = perfilData.meta_lucro || 12000
+  document.getElementById('cfg-saldo-inicial').value = perfilData.saldo_inicial || 0
+  document.getElementById('cfg-regime').value = perfilData.regime_tributario || 'Simples Nacional'
+}
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+const VIEW_TITLES = {dashboard:'Dashboard',receitas:'Receitas',despesas:'Despesas',receber:'Contas a Receber',pagar:'Contas a Pagar',fluxo:'Fluxo de Caixa',dre:'DRE Gerencial',comparativos:'Comparativos',config:'Configurações'}
+
+function navigate(view) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'))
+  const el = document.getElementById('view-'+view)
+  if (el) { el.classList.add('active'); el.classList.remove('fade-in'); void el.offsetWidth; el.classList.add('fade-in') }
+  const nav = document.getElementById('nav-'+view)
+  if (nav) nav.classList.add('active')
+  document.getElementById('topbar-title').textContent = VIEW_TITLES[view] || view
+  if (view==='dashboard') renderDashboard()
+  if (view==='receitas') renderReceitas()
+  if (view==='despesas') renderDespesas()
+  if (view==='receber') renderReceber()
+  if (view==='pagar') renderPagar()
+  if (view==='fluxo') renderFluxo()
+  if (view==='dre') renderDRE()
+  if (view==='comparativos') renderComparativos()
+  if (view==='config') loadPerfil()
+}
+
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed') }
+
+// ══════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ══════════════════════════════════════════════
+function renderDashboard() {
+  const mr = receitas.filter(r => r.data && r.data.startsWith(CUR_MONTH_KEY))
+  const md = despesas.filter(d => d.data && d.data.startsWith(CUR_MONTH_KEY))
+  const recT = sumBy(mr, r => r.status === 'recebido')
+  const depT = sumBy(md, d => d.status === 'pago')
+  const luc = recT - depT
+  const mar = recT > 0 ? (luc/recT)*100 : 0
+  const aR = sumBy(receitas, r => r.status !== 'recebido')
+  const aP = sumBy(despesas, d => d.status !== 'pago')
+  const rQ = receitas.filter(r => r.status !== 'recebido').length
+  const pQ = despesas.filter(d => d.status !== 'pago').length
+
+  document.getElementById('kpi-receita').textContent = fmt(recT)
+  document.getElementById('kpi-despesas').textContent = fmt(depT)
+  document.getElementById('kpi-lucro').textContent = fmt(luc)
+  document.getElementById('kpi-margem').textContent = mar.toFixed(1) + '%'
+  document.getElementById('kpi-receber').textContent = fmt(aR)
+  document.getElementById('kpi-pagar').textContent = fmt(aP)
+  document.getElementById('kpi-receber-ct').textContent = rQ + ' lançamento' + (rQ !== 1 ? 's' : '')
+  document.getElementById('kpi-pagar-ct').textContent = pQ + ' lançamento' + (pQ !== 1 ? 's' : '')
+  document.getElementById('chart-year').textContent = CUR_YEAR
+
+  const at = [
+    ...receitas.filter(r => r.status === 'atrasado').map(r => ({...r, tipo:'Receita', pessoa:r.cliente})),
+    ...despesas.filter(d => d.status === 'atrasado').map(d => ({...d, tipo:'Despesa', pessoa:d.fornecedor}))
+  ]
+  const ac = document.getElementById('alerts-container')
+  ac.innerHTML = at.length === 0
+    ? `<div style="text-align:center;padding:30px;color:var(--t3);font-size:13px">✅ Nenhum lançamento em atraso</div>`
+    : at.map(a => `<div class="alert-item"><span style="font-size:16px">⚠️</span><div style="flex:1;min-width:0"><div class="alert-desc">${a.descricao}</div><div class="alert-sub">${a.tipo} · ${a.pessoa} · ${fmtDate(a.data)}</div></div><div class="alert-val">${fmt(a.valor)}</div></div>`).join('')
+
+  buildCharts()
+}
+
+function buildCharts() {
+  const monthly = computeMonthly()
+  const gc = 'rgba(26,40,64,0.8)', tc = '#3d5470'
+  const base = {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:'Sora'}}},y:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:'Sora'},callback:v=>`R$${(v/1000).toFixed(0)}k`}}}}
+
+  if (chartEv) chartEv.destroy()
+  chartEv = new Chart(document.getElementById('chartEvolucao').getContext('2d'), {
+    type: 'line',
+    data: {labels: monthly.map(m => m.mes), datasets: [
+      {label:'Receita', data:monthly.map(m=>m.receita), borderColor:'#10b981', backgroundColor:'rgba(16,185,129,0.1)', fill:true, tension:.4, borderWidth:2, pointRadius:4, pointBackgroundColor:'#10b981', pointStyle:'circle'},
+      {label:'Despesa', data:monthly.map(m=>m.despesa), borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.1)', fill:true, tension:.4, borderWidth:2, pointRadius:4, pointBackgroundColor:'#ef4444', pointStyle:'triangle'},
+      {label:'Lucro',   data:monthly.map(m=>m.lucro),   borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.1)', fill:true, tension:.4, borderWidth:2, pointRadius:4, pointBackgroundColor:'#2563eb', pointStyle:'rect'},
+    ]},
+    options: {...base, plugins:{legend:{display:true,labels:{color:tc,font:{size:10,family:'Sora'},boxWidth:10,boxHeight:10,usePointStyle:true}}}}
+  })
+
+  // Pie por classificação
+  const classifTotals = {}
+  receitas.filter(r => r.status === 'recebido' && r.data && r.data.startsWith(CUR_MONTH_KEY)).forEach(r => {
+    classifTotals[r.classificacao] = (classifTotals[r.classificacao]||0) + (r.valor||0)
+  })
+  const pieColors = ['#2563eb','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444']
+  const pieEntries = Object.entries(classifTotals).sort((a,b) => b[1]-a[1]).slice(0,6)
+  const pieData = pieEntries.length ? pieEntries.map((e,i) => ({name:e[0], v:e[1], c:pieColors[i%pieColors.length]})) : [{name:'Sem dados', v:1, c:'#1a2840'}]
+
+  if (chartPie) chartPie.destroy()
+  chartPie = new Chart(document.getElementById('chartPie').getContext('2d'), {
+    type: 'doughnut',
+    data: {labels: pieData.map(p=>p.name), datasets: [{data:pieData.map(p=>p.v), backgroundColor:pieData.map(p=>p.c), borderWidth:0, hoverOffset:8}]},
+    options: {responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fmt(ctx.raw)}`}}}}
+  })
+  document.getElementById('pie-legend').innerHTML = pieData.map(p => `<div class="pie-legend-item"><div class="pie-legend-name"><div class="pie-legend-dot" style="background:${p.c}"></div>${p.name}</div><div class="pie-legend-val">${fmt(p.v)}</div></div>`).join('')
+
+  if (chartBar) chartBar.destroy()
+  chartBar = new Chart(document.getElementById('chartBar').getContext('2d'), {
+    type: 'bar',
+    data: {labels: monthly.map(m=>m.mes), datasets: [
+      {label:'Receita', data:monthly.map(m=>m.receita), backgroundColor:'rgba(16,185,129,0.7)', borderRadius:4},
+      {label:'Despesa', data:monthly.map(m=>m.despesa), backgroundColor:'rgba(239,68,68,0.7)', borderRadius:4},
+      {label:'Lucro',   data:monthly.map(m=>m.lucro),   backgroundColor:'rgba(37,99,235,0.7)', borderRadius:4},
+    ]},
+    options: {...base, plugins:{legend:{display:true,labels:{color:tc,font:{size:10,family:'Sora'},boxWidth:10,boxHeight:10}}}}
+  })
+}
+
+function renderReceitas() {
+  const mes = document.getElementById('filter-rec-mes').value
+  const sts = document.getElementById('filter-rec-status').value
+  const filt = receitas.filter(r => (!mes||r.data&&r.data.startsWith(mes)) && (!sts||r.status===sts))
+  document.getElementById('kpi-receitas-grid').innerHTML =
+    kpiSmall('Total Lançado', fmt(filt.reduce((s,r)=>s+r.valor,0)), 'var(--blueL)') +
+    kpiSmall('Recebido', fmt(sumBy(filt,r=>r.status==='recebido')), 'var(--green)') +
+    kpiSmall('Pendente', fmt(sumBy(filt,r=>r.status==='pendente')), 'var(--amber)') +
+    kpiSmall('Atrasado', fmt(sumBy(filt,r=>r.status==='atrasado')), 'var(--red)')
+  document.querySelector('#table-receitas tbody').innerHTML = filt.length === 0
+    ? `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--t3)">Nenhum lançamento encontrado</td></tr>`
+    : filt.map(r => `<tr>
+        <td>${fmtDate(r.data)}</td><td class="td-strong">${r.cliente||''}</td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.descricao||''}</td>
+        <td>${r.classificacao||''}</td>
+        <td class="td-money-green">${fmt(r.valor)}</td>
+        <td>${chipHTML(r.status)}</td><td>${r.forma||''}</td>
+        <td><button onclick="removeReceita('${r.id}')" style="background:var(--redD);color:var(--red);border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px">🗑</button></td>
+      </tr>`).join('')
+}
+
+function renderDespesas() {
+  const mes = document.getElementById('filter-desp-mes').value
+  const sts = document.getElementById('filter-desp-status').value
+  const filt = despesas.filter(d => (!mes||d.data&&d.data.startsWith(mes)) && (!sts||d.status===sts))
+  document.getElementById('kpi-despesas-grid').innerHTML =
+    kpiSmall('Total Lançado', fmt(filt.reduce((s,d)=>s+d.valor,0)), 'var(--blueL)') +
+    kpiSmall('Pago', fmt(sumBy(filt,d=>d.status==='pago')), 'var(--green)') +
+    kpiSmall('Pendente', fmt(sumBy(filt,d=>d.status==='pendente')), 'var(--amber)') +
+    kpiSmall('Atrasado', fmt(sumBy(filt,d=>d.status==='atrasado')), 'var(--red)')
+  document.querySelector('#table-despesas tbody').innerHTML = filt.length === 0
+    ? `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--t3)">Nenhum lançamento encontrado</td></tr>`
+    : filt.map(d => `<tr>
+        <td>${fmtDate(d.data)}</td><td class="td-strong">${d.fornecedor||''}</td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.descricao||''}</td>
+        <td>${d.classificacao||''}</td>
+        <td class="td-money-red">${fmt(d.valor)}</td>
+        <td>${chipHTML(d.status)}</td><td>${d.forma||''}</td>
+        <td><button onclick="removeDespesa('${d.id}')" style="background:var(--redD);color:var(--red);border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px">🗑</button></td>
+      </tr>`).join('')
+}
+
+function renderReceber() {
+  const pend = receitas.filter(r => r.status !== 'recebido')
+  document.getElementById('kpi-receber-grid').innerHTML =
+    kpiSmall('Total a Receber', fmt(sumBy(pend,()=>true)), 'var(--blueL)') +
+    kpiSmall('Pendente', fmt(sumBy(pend,r=>r.status==='pendente')), 'var(--amber)') +
+    kpiSmall('Em Atraso', fmt(sumBy(pend,r=>r.status==='atrasado')), 'var(--red)')
+  document.querySelector('#table-receber tbody').innerHTML = pend.length === 0
+    ? `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--t3)">✅ Sem pendências</td></tr>`
+    : pend.map(r => `<tr><td>${fmtDate(r.data)}</td><td class="td-strong">${r.cliente||''}</td><td>${r.descricao||''}</td><td>${r.classificacao||''}</td><td class="td-money-green">${fmt(r.valor)}</td><td>${chipHTML(r.status)}</td><td>${r.forma||''}</td></tr>`).join('')
+}
+
+function renderPagar() {
+  const pend = despesas.filter(d => d.status !== 'pago')
+  document.getElementById('kpi-pagar-grid').innerHTML =
+    kpiSmall('Total a Pagar', fmt(sumBy(pend,()=>true)), 'var(--blueL)') +
+    kpiSmall('Pendente', fmt(sumBy(pend,d=>d.status==='pendente')), 'var(--amber)') +
+    kpiSmall('Em Atraso', fmt(sumBy(pend,d=>d.status==='atrasado')), 'var(--red)')
+  document.querySelector('#table-pagar tbody').innerHTML = pend.length === 0
+    ? `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--t3)">✅ Sem pendências</td></tr>`
+    : pend.map(d => `<tr><td>${fmtDate(d.data)}</td><td class="td-strong">${d.fornecedor||''}</td><td>${d.descricao||''}</td><td>${d.classificacao||''}</td><td class="td-money-red">${fmt(d.valor)}</td><td>${chipHTML(d.status)}</td><td>${d.forma||''}</td></tr>`).join('')
+}
+
+function renderFluxo() {
+  const sI = perfilData.saldo_inicial || 0
+  const rT = sumBy(receitas.filter(r=>r.data&&r.data.startsWith(CUR_MONTH_KEY)), r=>r.status==='recebido')
+  const dT = sumBy(despesas.filter(d=>d.data&&d.data.startsWith(CUR_MONTH_KEY)), d=>d.status==='pago')
+  document.getElementById('kpi-fluxo-grid').innerHTML =
+    kpiSmall('Saldo Inicial', fmt(sI), 'var(--t2)') +
+    kpiSmall('Entradas Realizadas', fmt(rT), 'var(--green)') +
+    kpiSmall('Saídas Realizadas', fmt(dT), 'var(--red)') +
+    kpiSmall('Saldo Atual', fmt(sI+rT-dT), 'var(--blueL)')
+
+  const allMovs = [
+    ...receitas.filter(r=>r.data&&r.data.startsWith(CUR_MONTH_KEY)).map(r=>({...r,tipo:'Receita',sinal:1})),
+    ...despesas.filter(d=>d.data&&d.data.startsWith(CUR_MONTH_KEY)).map(d=>({...d,tipo:'Despesa',sinal:-1}))
+  ].sort((a,b)=>a.data.localeCompare(b.data))
+
+  document.getElementById('fluxo-tbody').innerHTML = allMovs.length === 0
+    ? `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--t3)">Nenhum lançamento neste mês</td></tr>`
+    : allMovs.map(m => {
+        const isRec = m.tipo === 'Receita'
+        return `<tr>
+          <td>${fmtDate(m.data)}</td>
+          <td><span class="chip ${isRec?'chip-green':'chip-red'}">${m.tipo}</span></td>
+          <td>${m.descricao||''}</td>
+          <td class="${isRec?'td-money-green':'td-money-red'}">${isRec?'+':'-'} ${fmt(m.valor)}</td>
+          <td>${chipHTML(m.status)}</td>
+        </tr>`
+      }).join('')
+
+  // Chart de saldo acumulado
+  let saldo = sI
+  const labels = [], saldos = []
+  const sorted = allMovs.filter(m => m.status==='recebido'||m.status==='pago')
+  sorted.forEach(m => {
+    saldo += m.sinal * m.valor
+    labels.push(fmtDate(m.data))
+    saldos.push(saldo)
+  })
+  if (!labels.length) { labels.push('Início'); saldos.push(sI) }
+
+  const gc='rgba(26,40,64,0.8)', tc='#3d5470'
+  if (chartFluxo) chartFluxo.destroy()
+  chartFluxo = new Chart(document.getElementById('chartFluxo').getContext('2d'), {
+    type: 'line',
+    data: {labels, datasets:[{label:'Saldo', data:saldos, borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,0.12)', fill:true, tension:.4, borderWidth:2.5, pointRadius:4, pointBackgroundColor:'#2563eb', pointStyle:'circle'}]},
+    options: {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:9,family:'Sora'},maxRotation:45}},y:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:'Sora'},callback:v=>`R$${(v/1000).toFixed(0)}k`}}}}
+  })
+}
+
+function renderDRE() {
+  const mr = receitas.filter(r => r.data&&r.data.startsWith(CUR_MONTH_KEY))
+  const md = despesas.filter(d => d.data&&d.data.startsWith(CUR_MONTH_KEY))
+  const META = perfilData.meta_faturamento || 20000
+
+  const rB = sumBy(mr, r=>r.status==='recebido')
+  const imp = sumBy(md, d=>d.classificacao==='Impostos'&&d.status==='pago')
+  const rL = rB - imp
+  const pL = sumBy(md, d=>d.classificacao==='Pró-labore'&&d.status==='pago')
+  const mk = sumBy(md, d=>d.classificacao==='Marketing'&&d.status==='pago')
+  const al = sumBy(md, d=>d.classificacao==='Aluguel'&&d.status==='pago')
+  const ct = sumBy(md, d=>d.classificacao==='Contabilidade'&&d.status==='pago')
+  const it = sumBy(md, d=>d.classificacao==='Internet'&&d.status==='pago')
+  const adm = sumBy(md, d=>d.classificacao==='Despesas administrativas'&&d.status==='pago')
+  const dT = sumBy(md, d=>d.classificacao!=='Impostos'&&d.status==='pago')
+  const res = rL - dT
+  const mar = rB > 0 ? (res/rB)*100 : 0
+
+  document.getElementById('dre-subtitle').textContent = `Referência: ${MONTH_NAMES[NOW.getMonth()]}/${CUR_YEAR} · Base: lançamentos cadastrados`
+
+  const row = (label, val, opts={}) => {
+    const {bold=false, sep=false, big=false, color='', indent=0, isPct=false} = opts
+    let vH = ''
+    if (isPct) vH = `<span style="font-weight:700;font-size:14px;color:${color||'var(--purple)'}">${val}</span>`
+    else if (val !== null) {
+      const v = typeof val==='number'?val:0
+      const c = color||(v>=0?'var(--t1)':'var(--red)')
+      const s = v>=0 ? fmt(v) : `(${fmt(Math.abs(v))})`
+      vH = `<span class="dre-val" style="color:${c};font-size:${big?'15':'13'}px">${s}</span>`
+    }
+    return `<div class="dre-row${sep?' sep':''}${indent?` indent${indent}`:''}"><span class="dre-label${bold?' bold':''}" style="${color?`color:${color}`:'font-size:12.5px'}">${label}</span>${vH}</div>`
+  }
+
+  document.getElementById('dre-content').innerHTML = [
+    row('RECEITA BRUTA', rB, {bold:true, color:'var(--green)'}),
+    row('(–) Impostos sobre faturamento', -imp, {indent:1}),
+    row('(=) RECEITA LÍQUIDA', rL, {bold:true, sep:true, color:'var(--blueL)'}),
+    row('DESPESAS OPERACIONAIS', null, {bold:true, color:'var(--t3)'}),
+    row('Pró-labore', -pL, {indent:1}),
+    row('Marketing e Tráfego', -mk, {indent:1}),
+    row('Aluguel / Internet / Contabilidade', -(al+ct+it), {indent:1}),
+    row('Despesas Administrativas', -adm, {indent:1}),
+    row('TOTAL DESPESAS OPERACIONAIS', -dT, {bold:true, sep:true, color:'var(--red)'}),
+    row('(=) RESULTADO OPERACIONAL', res, {bold:true, sep:true, color:'var(--blue)'}),
+    row('(=) LUCRO LÍQUIDO DO PERÍODO', res, {bold:true, sep:true, big:true, color:res>=0?'var(--green)':'var(--red)'}),
+    row('Margem de Lucro', mar.toFixed(1)+'%', {bold:true, color:'var(--purple)', isPct:true}),
+  ].join('')
+
+  const pct = Math.min((rB/META)*100, 100)
+  document.getElementById('meta-label').textContent = `Progresso — ${MONTH_NAMES[NOW.getMonth()]}`
+  document.getElementById('meta-progress').textContent = pct.toFixed(1)+'%'
+  document.getElementById('meta-bar').style.width = pct+'%'
+  document.getElementById('meta-val').textContent = fmt(META)
+
+  const ins = [
+    {icon:'✅', text:`Lucro apurado: <strong>${fmt(res)}</strong> com margem de <strong>${mar.toFixed(1)}%</strong> sobre a receita recebida.`, color:'var(--greenD)'},
+    {icon:'📈', text:`Receita Bruta: <strong>${fmt(rB)}</strong> — <strong>${pct.toFixed(0)}%</strong> da meta mensal de ${fmt(META)}.`, color:'var(--blueD)'},
+    {icon:'⚠️', text:`Impostos representam <strong>${rB>0?((imp/rB)*100).toFixed(1):0}%</strong> da receita bruta. Avalie a otimização tributária com seu contador.`, color:'var(--amberD)'},
+    {icon:'💼', text:`Pró-labore: <strong>${rB>0?((pL/rB)*100).toFixed(1):0}%</strong> sobre a receita — acompanhe para não comprometer a liquidez.`, color:'var(--purpleD)'},
+    {icon:'📌', text:`Monitore os lançamentos em atraso. A regularização das contas a receber é essencial para manter o <strong>fluxo de caixa positivo</strong>.`, color:'var(--redD)'},
+  ]
+  document.getElementById('insights-content').innerHTML = ins.map(i => `<div class="insight-card" style="background:${i.color}"><span class="insight-icon">${i.icon}</span><p class="insight-text">${i.text}</p></div>`).join('')
+}
+
+function renderComparativos() {
+  const monthly = computeMonthly()
+  const last = monthly[monthly.length-1] || {receita:0,despesa:0,lucro:0}
+  const prev = monthly[monthly.length-2] || {receita:0,despesa:0,lucro:0}
+  const varRec = prev.receita > 0 ? ((last.receita-prev.receita)/prev.receita*100).toFixed(1) : '—'
+  const varLuc = prev.lucro > 0 ? ((last.lucro-prev.lucro)/prev.lucro*100).toFixed(1) : '—'
+  const varDep = prev.despesa > 0 ? ((last.despesa-prev.despesa)/prev.despesa*100).toFixed(1) : '—'
+
+  document.getElementById('kpi-comp-grid').innerHTML =
+    kpiSmall('Var. Receita', varRec==='—'?'—':(parseFloat(varRec)>=0?'+':'')+varRec+'%', parseFloat(varRec)>=0?'var(--green)':'var(--red)', 'último vs anterior') +
+    kpiSmall('Var. Lucro', varLuc==='—'?'—':(parseFloat(varLuc)>=0?'+':'')+varLuc+'%', parseFloat(varLuc)>=0?'var(--blueL)':'var(--red)', 'último vs anterior') +
+    kpiSmall('Var. Despesas', varDep==='—'?'—':(parseFloat(varDep)>=0?'+':'')+varDep+'%', 'var(--amber)', 'último vs anterior')
+
+  document.getElementById('comp-tbody').innerHTML = monthly.map((m,i) => {
+    const p = monthly[i-1]
+    const vr = p?((m.receita-p.receita)/p.receita*100).toFixed(1):'—'
+    const vl = p&&p.lucro>0?((m.lucro-p.lucro)/p.lucro*100).toFixed(1):'—'
+    const mg = m.receita>0?(m.lucro/m.receita*100).toFixed(1):'0.0'
+    return `<tr>
+      <td class="td-strong">${m.mes}/${CUR_YEAR}</td>
+      <td style="color:var(--green);font-weight:600">${fmt(m.receita)}</td>
+      <td style="color:var(--red);font-weight:600">${fmt(m.despesa)}</td>
+      <td style="color:var(--blueL);font-weight:700">${fmt(m.lucro)}</td>
+      <td style="color:var(--purple);font-weight:600">${mg}%</td>
+      <td style="${!p?'':(parseFloat(vr)>=0?'color:var(--green)':'color:var(--red)')}">${vr==='—'?'—':(parseFloat(vr)>=0?'+':'')+vr+'%'}</td>
+      <td style="${!p||vl==='—'?'':(parseFloat(vl)>=0?'color:var(--green)':'color:var(--red)')}">${vl==='—'?'—':(parseFloat(vl)>=0?'+':'')+vl+'%'}</td>
+    </tr>`
+  }).join('')
+
+  const gc='rgba(26,40,64,0.8)', tc='#3d5470'
+  const opts = {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:'Sora'}}},y:{grid:{color:gc},ticks:{color:tc,font:{size:10,family:'Sora'}}}}}
+
+  if (chartCR) chartCR.destroy()
+  chartCR = new Chart(document.getElementById('chartCompReceita').getContext('2d'), {
+    type: 'bar',
+    data: {labels:monthly.map(m=>m.mes), datasets:[
+      {label:'Receita', data:monthly.map(m=>m.receita), backgroundColor:'rgba(37,99,235,0.7)', borderRadius:5},
+      {label:'Lucro',   data:monthly.map(m=>m.lucro),   backgroundColor:'rgba(16,185,129,0.7)', borderRadius:5},
+    ]},
+    options: {...opts, plugins:{legend:{display:true,labels:{color:tc,font:{size:10,family:'Sora'},boxWidth:10,boxHeight:10}}}, scales:{x:opts.scales.x, y:{...opts.scales.y, ticks:{...opts.scales.y.ticks, callback:v=>`R$${(v/1000).toFixed(0)}k`}}}}
+  })
+
+  if (chartCM) chartCM.destroy()
+  chartCM = new Chart(document.getElementById('chartCompMargem').getContext('2d'), {
+    type: 'line',
+    data: {labels:monthly.map(m=>m.mes), datasets:[{label:'Margem %', data:monthly.map(m=>m.receita>0?+(m.lucro/m.receita*100).toFixed(1):0), borderColor:'#8b5cf6', backgroundColor:'rgba(139,92,246,0.12)', fill:true, tension:.4, borderWidth:2.5, pointRadius:5, pointBackgroundColor:'#8b5cf6', pointStyle:'circle'}]},
+    options: {...opts, scales:{x:opts.scales.x, y:{...opts.scales.y, ticks:{...opts.scales.y.ticks, callback:v=>`${v}%`}}}}
+  })
+}
+
+// ══════════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════════
+function openModal(type) {
+  currentModalType = type
+  const isR = type === 'receita'
+  document.getElementById('modal-title').textContent = isR ? '📥 Nova Receita' : '📤 Nova Despesa'
+  document.getElementById('form-pessoa-label').textContent = isR ? 'Cliente' : 'Fornecedor'
+  document.getElementById('form-pessoa').placeholder = isR ? 'Nome do cliente' : 'Nome do fornecedor'
+  document.getElementById('form-forma-label').textContent = isR ? 'Forma de Recebimento' : 'Forma de Pagamento'
+  document.getElementById('modal-save-btn').style.background = isR ? 'var(--blue)' : 'var(--red)'
+  document.getElementById('form-classificacao').innerHTML = (isR?CLASSIF_R:CLASSIF_D).map(c=>`<option>${c}</option>`).join('')
+  document.getElementById('form-status').innerHTML = isR
+    ? '<option value="pendente">Pendente</option><option value="recebido">Recebido</option><option value="atrasado">Atrasado</option>'
+    : '<option value="pendente">Pendente</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option>'
+  ;['form-pessoa','form-descricao','form-valor'].forEach(id => document.getElementById(id).value='')
+  document.getElementById('form-data').value = NOW.toISOString().split('T')[0]
+  document.getElementById('modal-save-btn').textContent = 'Salvar Lançamento'
+  document.getElementById('modal-save-btn').disabled = false
+  document.getElementById('modal-overlay').classList.add('open')
+}
+
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open') }
+function handleOverlayClick(e) { if (e.target.id==='modal-overlay') closeModal() }
+
+async function saveTransaction() {
+  const isR = currentModalType === 'receita'
+  const pessoa = document.getElementById('form-pessoa').value.trim()
+  const descricao = document.getElementById('form-descricao').value.trim()
+  const valor = parseFloat(document.getElementById('form-valor').value)||0
+  if (!pessoa||!descricao||!valor) { alert('Preencha todos os campos obrigatórios.'); return }
+
+  const btn = document.getElementById('modal-save-btn')
+  btn.textContent = 'Salvando...'; btn.disabled = true
+
+  const item = {
+    data: document.getElementById('form-data').value,
+    classificacao: document.getElementById('form-classificacao').value,
+    forma: document.getElementById('form-forma').value,
+    status: document.getElementById('form-status').value,
+    descricao, valor,
+    [isR?'cliente':'fornecedor']: pessoa
+  }
+
+  if (isR) {
+    const result = await addReceita(item)
+    if (result) { closeModal(); navigate('receitas') }
+  } else {
+    const result = await addDespesa(item)
+    if (result) { closeModal(); navigate('despesas') }
+  }
+
+  btn.textContent = 'Salvar Lançamento'; btn.disabled = false
+}
+
+// ══════════════════════════════════════════════
+// APP ENTRY
+// ══════════════════════════════════════════════
+async function enterApp() {
+  document.getElementById('auth-screen').style.display = 'none'
+  await loadAllData()
+
+  // UI setup
+  const email = currentUser?.email || ''
+  const name = currentUser?.user_metadata?.nome || email.split('@')[0]
+  document.getElementById('user-name').textContent = name
+  document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase()
+
+  const dateOpts = {weekday:'long', year:'numeric', month:'long', day:'numeric'}
+  document.getElementById('topbar-sub').textContent = NOW.toLocaleDateString('pt-BR', dateOpts)
+  document.getElementById('period-badge').textContent = `${MONTH_NAMES[NOW.getMonth()]} ${CUR_YEAR}`
+  document.getElementById('chart-year').textContent = CUR_YEAR
+
+  buildMonthFilters()
+  navigate('dashboard')
+}
+
+// ══════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════
+async function init() {
+  const { data: { session } } = await sb.auth.getSession()
+  if (session) {
+    currentUser = session.user
+    await enterApp()
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex'
+  }
+
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      document.getElementById('app-screen').style.display = 'none'
+      document.getElementById('auth-screen').style.display = 'flex'
+    }
+  })
+}
+
+init()
+</script>
+</body>
+</html>
