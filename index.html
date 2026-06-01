@@ -253,14 +253,59 @@ tr:hover td{background:var(--blueDD);}
       <div style="font-size:22px;font-weight:700;color:var(--t1)" id="auth-title">Entrar na conta</div>
       <div style="font-size:12px;color:var(--t3);margin-top:5px">Zahi Finance — Consultoria Zahi</div>
     </div>
-    <div id="nome-field" style="display:none" class="auth-field"><label class="auth-label">Nome completo</label><input id="auth-nome" class="auth-input" type="text" placeholder="Seu nome"/></div>
-    <div class="auth-field"><label class="auth-label">E-mail</label><input id="auth-email" class="auth-input" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')handleAuth()"/></div>
-    <div class="auth-field"><label class="auth-label">Senha</label><input id="auth-password" class="auth-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()"/></div>
-    <div id="auth-msg" class="auth-msg"></div>
-    <button id="auth-btn" class="auth-btn-main" onclick="handleAuth()">Entrar</button>
-    <div style="text-align:center;margin-top:20px;font-size:12px;color:var(--t3)">
-      <span id="auth-toggle-text">Não tem conta?</span>
-      <span id="auth-toggle-link" onclick="toggleAuthMode()" style="color:var(--blueL);cursor:pointer;font-weight:600;margin-left:4px">Cadastre-se</span>
+
+    <!-- FORM: login / signup -->
+    <div id="auth-form-section">
+      <div id="nome-field" style="display:none" class="auth-field">
+        <label class="auth-label">Nome completo</label>
+        <input id="auth-nome" class="auth-input" type="text" placeholder="Seu nome"/>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">E-mail</label>
+        <input id="auth-email" class="auth-input" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')handleAuth()"/>
+      </div>
+      <div id="password-field" class="auth-field">
+        <label class="auth-label">Senha</label>
+        <input id="auth-password" class="auth-input" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleAuth()"/>
+      </div>
+      <div id="auth-msg" class="auth-msg"></div>
+      <button id="auth-btn" class="auth-btn-main" onclick="handleAuth()">Entrar</button>
+      <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--t3)">
+        <span id="auth-toggle-text">Não tem conta?</span>
+        <span id="auth-toggle-link" onclick="toggleAuthMode()" style="color:var(--blueL);cursor:pointer;font-weight:600;margin-left:4px">Cadastre-se</span>
+      </div>
+      <div id="forgot-link-wrap" style="text-align:center;margin-top:10px;">
+        <span onclick="setAuthMode('forgot')" style="font-size:12px;color:var(--t3);cursor:pointer;text-decoration:underline">Esqueci minha senha</span>
+      </div>
+    </div>
+
+    <!-- FORM: esqueci senha -->
+    <div id="forgot-section" style="display:none">
+      <p style="font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.6">Informe seu e-mail e enviaremos um link para redefinir sua senha.</p>
+      <div class="auth-field">
+        <label class="auth-label">E-mail</label>
+        <input id="forgot-email" class="auth-input" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')handleForgotPassword()"/>
+      </div>
+      <div id="forgot-msg" class="auth-msg"></div>
+      <button id="forgot-btn" class="auth-btn-main" onclick="handleForgotPassword()">Enviar link de redefinição</button>
+      <div style="text-align:center;margin-top:16px;">
+        <span onclick="setAuthMode('login')" style="font-size:12px;color:var(--blueL);cursor:pointer;font-weight:600">← Voltar ao login</span>
+      </div>
+    </div>
+
+    <!-- FORM: redefinir senha (após clicar no link do e-mail) -->
+    <div id="reset-section" style="display:none">
+      <p style="font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.6">Crie uma nova senha para sua conta.</p>
+      <div class="auth-field">
+        <label class="auth-label">Nova senha</label>
+        <input id="reset-password" class="auth-input" type="password" placeholder="Mínimo 6 caracteres" onkeydown="if(event.key==='Enter')handlePasswordReset()"/>
+      </div>
+      <div class="auth-field">
+        <label class="auth-label">Confirmar nova senha</label>
+        <input id="reset-password2" class="auth-input" type="password" placeholder="Repita a senha" onkeydown="if(event.key==='Enter')handlePasswordReset()"/>
+      </div>
+      <div id="reset-msg" class="auth-msg"></div>
+      <button id="reset-btn" class="auth-btn-main" onclick="handlePasswordReset()">Salvar nova senha</button>
     </div>
   </div>
 </div>
@@ -678,19 +723,57 @@ function initTheme(){
 // AUTH
 // ═══════════════════════════════════════
 let authMode='login'
-function toggleAuthMode(){
-  authMode=authMode==='login'?'signup':'login'
-  document.getElementById('auth-title').textContent=authMode==='login'?'Entrar na conta':'Criar conta'
-  document.getElementById('auth-btn').textContent=authMode==='login'?'Entrar':'Criar conta'
-  document.getElementById('auth-toggle-text').textContent=authMode==='login'?'Não tem conta?':'Já tem conta?'
-  document.getElementById('auth-toggle-link').textContent=authMode==='login'?'Cadastre-se':'Fazer login'
-  document.getElementById('nome-field').style.display=authMode==='signup'?'block':'none'
-  document.getElementById('auth-msg').style.display='none'
+
+function setAuthMode(mode){
+  authMode=mode
+  const isLogin=mode==='login'
+  const isSignup=mode==='signup'
+  const isForgot=mode==='forgot'
+  const isReset=mode==='reset'
+
+  document.getElementById('auth-form-section').style.display=(isLogin||isSignup)?'block':'none'
+  document.getElementById('forgot-section').style.display=isForgot?'block':'none'
+  document.getElementById('reset-section').style.display=isReset?'block':'none'
+
+  if(isLogin||isSignup){
+    document.getElementById('auth-title').textContent=isLogin?'Entrar na conta':'Criar conta'
+    document.getElementById('auth-btn').textContent=isLogin?'Entrar':'Criar conta'
+    document.getElementById('auth-btn').disabled=false
+    document.getElementById('auth-toggle-text').textContent=isLogin?'Não tem conta?':'Já tem conta?'
+    document.getElementById('auth-toggle-link').textContent=isLogin?'Cadastre-se':'Fazer login'
+    document.getElementById('nome-field').style.display=isSignup?'block':'none'
+    document.getElementById('password-field').style.display='block'
+    document.getElementById('forgot-link-wrap').style.display=isLogin?'block':'none'
+  }
+  if(isForgot) document.getElementById('auth-title').textContent='Redefinir senha'
+  if(isReset)  document.getElementById('auth-title').textContent='Nova senha'
+  clearAllMsgs()
 }
+
+function toggleAuthMode(){
+  setAuthMode(authMode==='login'?'signup':'login')
+}
+
+function clearAllMsgs(){
+  ['auth-msg','forgot-msg','reset-msg'].forEach(id=>{
+    const el=document.getElementById(id)
+    if(el)el.style.display='none'
+  })
+}
+
 function showAuthMsg(msg,type='error'){
   const el=document.getElementById('auth-msg')
   el.textContent=msg;el.className=`auth-msg ${type}`;el.style.display='block'
 }
+function showForgotMsg(msg,type='error'){
+  const el=document.getElementById('forgot-msg')
+  el.textContent=msg;el.className=`auth-msg ${type}`;el.style.display='block'
+}
+function showResetMsg(msg,type='error'){
+  const el=document.getElementById('reset-msg')
+  el.textContent=msg;el.className=`auth-msg ${type}`;el.style.display='block'
+}
+
 async function handleAuth(){
   const email=document.getElementById('auth-email').value.trim()
   const password=document.getElementById('auth-password').value
@@ -698,17 +781,72 @@ async function handleAuth(){
   if(!email||!password){showAuthMsg('Preencha e-mail e senha.');return}
   const btn=document.getElementById('auth-btn')
   btn.textContent='Aguarde...';btn.disabled=true
-  if(authMode==='login'){
-    const{data,error}=await sb.auth.signInWithPassword({email,password})
-    if(error){showAuthMsg(error.message.includes('Invalid')?'E-mail ou senha incorretos.':error.message);btn.textContent='Entrar';btn.disabled=false;return}
-    currentUser=data.user;await enterApp()
-  }else{
-    const{error}=await sb.auth.signUp({email,password,options:{data:{nome}}})
-    if(error){showAuthMsg(error.message);btn.textContent='Criar conta';btn.disabled=false;return}
-    showAuthMsg('Cadastro realizado! Verifique seu e-mail para confirmar.','success')
-    btn.textContent='Criar conta';btn.disabled=false
+  try{
+    if(authMode==='login'){
+      const{data,error}=await sb.auth.signInWithPassword({email,password})
+      if(error){
+        const msg=error.message.includes('Invalid')||error.message.includes('invalid')
+          ?'E-mail ou senha incorretos. Verifique e tente novamente.'
+          :error.message
+        showAuthMsg(msg)
+        btn.textContent='Entrar';btn.disabled=false
+        return
+      }
+      currentUser=data.user
+      await enterApp()
+    }else{
+      const{error}=await sb.auth.signUp({email,password,options:{data:{nome}}})
+      if(error){showAuthMsg(error.message);btn.textContent='Criar conta';btn.disabled=false;return}
+      showAuthMsg('✅ Cadastro realizado! Verifique seu e-mail para confirmar a conta.','success')
+      btn.textContent='Criar conta';btn.disabled=false
+    }
+  }catch(e){
+    showAuthMsg('Erro de conexão: '+e.message+'. Recarregue a página.')
+    btn.textContent=authMode==='login'?'Entrar':'Criar conta'
+    btn.disabled=false
   }
 }
+
+async function handleForgotPassword(){
+  const email=document.getElementById('forgot-email').value.trim()
+  if(!email){showForgotMsg('Informe seu e-mail.');return}
+  const btn=document.getElementById('forgot-btn')
+  btn.textContent='Enviando...';btn.disabled=true
+  try{
+    const{error}=await sb.auth.resetPasswordForEmail(email,{
+      redirectTo:'https://zahi-finance-tzf5.vercel.app'
+    })
+    if(error){showForgotMsg(error.message);btn.textContent='Enviar link de redefinição';btn.disabled=false;return}
+    showForgotMsg('✅ Link enviado! Verifique sua caixa de entrada e spam.','success')
+    btn.textContent='Link enviado!';btn.disabled=true
+  }catch(e){
+    showForgotMsg('Erro: '+e.message)
+    btn.textContent='Enviar link de redefinição';btn.disabled=false
+  }
+}
+
+async function handlePasswordReset(){
+  const p1=document.getElementById('reset-password').value
+  const p2=document.getElementById('reset-password2').value
+  if(!p1||p1.length<6){showResetMsg('A senha deve ter pelo menos 6 caracteres.');return}
+  if(p1!==p2){showResetMsg('As senhas não coincidem.');return}
+  const btn=document.getElementById('reset-btn')
+  btn.textContent='Salvando...';btn.disabled=true
+  try{
+    const{error}=await sb.auth.updateUser({password:p1})
+    if(error){showResetMsg(error.message);btn.textContent='Salvar nova senha';btn.disabled=false;return}
+    showResetMsg('✅ Senha redefinida com sucesso!','success')
+    setTimeout(()=>{
+      window.location.hash=''
+      setAuthMode('login')
+      btn.textContent='Salvar nova senha';btn.disabled=false
+    },2000)
+  }catch(e){
+    showResetMsg('Erro: '+e.message)
+    btn.textContent='Salvar nova senha';btn.disabled=false
+  }
+}
+
 async function logout(){
   await sb.auth.signOut()
   currentUser=null;receitas=[];despesas=[];perfilData={};classificacoesCustom=[];recorrencias=[]
@@ -716,8 +854,7 @@ async function logout(){
   document.getElementById('auth-screen').style.display='flex'
   document.getElementById('auth-email').value=''
   document.getElementById('auth-password').value=''
-  document.getElementById('auth-msg').style.display='none'
-  if(authMode!=='login')toggleAuthMode()
+  setAuthMode('login')
 }
 
 // ═══════════════════════════════════════
@@ -1026,7 +1163,8 @@ function updateDashPeriodLabel(){
   else if(selectedMonthsDash.length===1)el.textContent=monthLabel(selectedMonthsDash[0])
   else el.textContent=selectedMonthsDash.length+' meses selecionados'
 }
-  const arr=id==='rec'?selectedMonthsRec:selectedMonthsDesp
+function updateMSLabel(id){
+  const arr=id==='rec'?selectedMonthsRec:id==='desp'?selectedMonthsDesp:selectedMonthsDash
   const el=document.getElementById('ms-label-'+id)
   if(!arr.length)el.textContent='Todos os meses'
   else if(arr.length===1)el.textContent=monthLabel(arr[0])
@@ -1434,10 +1572,45 @@ async function enterApp(){
 // ═══════════════════════════════════════
 async function init(){
   initTheme()
-  const{data:{session}}=await sb.auth.getSession()
-  if(session){currentUser=session.user;await enterApp()}
-  else document.getElementById('auth-screen').style.display='flex'
-  sb.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){document.getElementById('app-screen').style.display='none';document.getElementById('auth-screen').style.display='flex'}})
+
+  // Detectar se veio de link de recuperação de senha
+  const hash=window.location.hash
+  const isRecovery=hash.includes('type=recovery')||hash.includes('access_token')
+
+  if(isRecovery){
+    document.getElementById('auth-screen').style.display='flex'
+    // Aguarda o Supabase processar o token da URL
+    setTimeout(()=>setAuthMode('reset'),500)
+    return
+  }
+
+  try{
+    const{data:{session}}=await sb.auth.getSession()
+    if(session){
+      currentUser=session.user
+      await enterApp()
+    }else{
+      document.getElementById('auth-screen').style.display='flex'
+    }
+  }catch(e){
+    document.getElementById('auth-screen').style.display='flex'
+    showAuthMsg('Erro ao conectar. Verifique sua internet e recarregue.','error')
+  }
+
+  sb.auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_OUT'){
+      document.getElementById('app-screen').style.display='none'
+      document.getElementById('auth-screen').style.display='flex'
+    }
+    if(event==='PASSWORD_RECOVERY'){
+      document.getElementById('auth-screen').style.display='flex'
+      document.getElementById('app-screen').style.display='none'
+      setAuthMode('reset')
+    }
+    if(event==='USER_UPDATED'){
+      // Senha atualizada com sucesso - já tratado no handlePasswordReset
+    }
+  })
 }
 init()
 </script>
