@@ -332,6 +332,23 @@ tr:hover td{background:var(--blueDD);}
 
       <!-- DASHBOARD -->
       <div class="view active fade-in" id="view-dashboard">
+
+        <!-- FILTRO DE PERÍODO DO DASHBOARD -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:12px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blueL)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span style="font-size:12px;font-weight:600;color:var(--t2)">Período do Dashboard:</span>
+          <div class="ms-wrap">
+            <button class="ms-btn" onclick="toggleMS('dash',event)">
+              <span id="ms-label-dash">Mês atual</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="ms-panel" id="ms-panel-dash" style="display:none"></div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="resetDashMonth()">Mês atual</button>
+          <div style="flex:1"></div>
+          <span style="font-size:11px;color:var(--t3)" id="dash-period-label"></span>
+        </div>
+
         <div class="kpi-grid">
           <div class="kpi-card"><div class="kpi-label">Receita Total</div><div class="kpi-value" id="kpi-receita">R$ 0,00</div><div class="kpi-sub" id="kpi-receita-sub">mês atual</div></div>
           <div class="kpi-card"><div class="kpi-label">Despesas Totais</div><div class="kpi-value" id="kpi-despesas">R$ 0,00</div><div class="kpi-sub">mês atual</div></div>
@@ -406,7 +423,7 @@ tr:hover td{background:var(--blueDD);}
       <!-- CONTAS A PAGAR -->
       <div class="view fade-in" id="view-pagar">
         <div class="kpi-grid" id="kpi-pagar-grid"></div>
-        <div class="card card-pad"><div class="section-header"><span class="section-title">Contas a Pagar — Pendentes e Atrasadas</span></div><div class="table-wrap"><table id="table-pagar"><thead><tr><th>Data</th><th>Fornecedor</th><th>Descrição</th><th>Classificação</th><th>Valor</th><th>Status</th><th>Forma</th></tr></thead><tbody></tbody></table></div>
+        <div class="card card-pad"><div class="section-header"><span class="section-title">Contas a Pagar — Pendentes e Atrasadas</span></div><div class="table-wrap"><table id="table-pagar"><thead><tr><th>Data</th><th>Fornecedor</th><th>Descrição</th><th>Classificação</th><th>Valor</th><th>Status</th><th>Forma</th></tr></thead><tbody></tbody></table></div></div>
       </div>
 
       <!-- FLUXO -->
@@ -589,7 +606,7 @@ const sb=supabase.createClient(SUPA_URL,SUPA_KEY)
 let receitas=[],despesas=[],perfilData={},classificacoesCustom=[],recorrencias=[]
 let currentUser=null,currentModalType='',currentTipo='realizado',editingClassifId=null
 let chartEv,chartPie,chartBar,chartFluxo,chartCR,chartCM
-let selectedMonthsRec=[],selectedMonthsDesp=[]
+let selectedMonthsRec=[],selectedMonthsDesp=[],selectedMonthsDash=[]
 
 const NOW=new Date()
 const CUR_YEAR=NOW.getFullYear()
@@ -979,19 +996,36 @@ function onMSChange(id,fn){
   const panel=document.getElementById('ms-panel-'+id)
   const checked=[...panel.querySelectorAll('input:checked')].map(i=>i.value)
   if(id==='rec')selectedMonthsRec=checked
-  else selectedMonthsDesp=checked
+  else if(id==='desp')selectedMonthsDesp=checked
+  else if(id==='dash')selectedMonthsDash=checked
   updateMSLabel(id)
+  if(id==='dash')updateDashPeriodLabel()
   window[fn]&&window[fn]()
 }
 function selectAllMonths(id,all,fn){
   const panel=document.getElementById('ms-panel-'+id)
   panel.querySelectorAll('input').forEach(i=>i.checked=all)
-  if(id==='rec')selectedMonthsRec=all?buildAllMonthKeys().map(m=>m.key):[]
-  else selectedMonthsDesp=all?buildAllMonthKeys().map(m=>m.key):[]
+  const allKeys=buildAllMonthKeys().map(m=>m.key)
+  if(id==='rec')selectedMonthsRec=all?allKeys:[]
+  else if(id==='desp')selectedMonthsDesp=all?allKeys:[]
+  else if(id==='dash')selectedMonthsDash=all?allKeys:[]
   updateMSLabel(id)
+  if(id==='dash')updateDashPeriodLabel()
   window[fn]&&window[fn]()
 }
-function updateMSLabel(id){
+function resetDashMonth(){
+  selectedMonthsDash=[CUR_MONTH_KEY]
+  updateMSLabel('dash')
+  buildMSPanel('dash',selectedMonthsDash,'renderDashboard')
+  renderDashboard()
+}
+function updateDashPeriodLabel(){
+  const el=document.getElementById('dash-period-label')
+  if(!el)return
+  if(!selectedMonthsDash.length)el.textContent='Todos os meses'
+  else if(selectedMonthsDash.length===1)el.textContent=monthLabel(selectedMonthsDash[0])
+  else el.textContent=selectedMonthsDash.length+' meses selecionados'
+}
   const arr=id==='rec'?selectedMonthsRec:selectedMonthsDesp
   const el=document.getElementById('ms-label-'+id)
   if(!arr.length)el.textContent='Todos os meses'
@@ -1014,7 +1048,7 @@ function navigate(view){
   const nav=document.getElementById('nav-'+view)
   if(nav)nav.classList.add('active')
   document.getElementById('topbar-title').textContent=VIEW_TITLES[view]||view
-  if(view==='dashboard')renderDashboard()
+  if(view==='dashboard'){buildMSPanel('dash',selectedMonthsDash,'renderDashboard');updateDashPeriodLabel();renderDashboard()}
   if(view==='receitas'){buildMSPanel('rec',selectedMonthsRec,'renderReceitas');renderReceitas()}
   if(view==='despesas'){buildMSPanel('desp',selectedMonthsDesp,'renderDespesas');renderDespesas()}
   if(view==='receber')renderReceber()
@@ -1047,8 +1081,8 @@ function computeMonthly(){
 // DASHBOARD
 // ═══════════════════════════════════════
 function renderDashboard(){
-  const mr=receitas.filter(r=>r.data&&r.data.startsWith(CUR_MONTH_KEY)&&r.tipo!=='provisionado')
-  const md=despesas.filter(d=>d.data&&d.data.startsWith(CUR_MONTH_KEY)&&d.tipo!=='provisionado')
+  const mr=receitas.filter(r=>r.data&&monthMatchFilter(r.data,selectedMonthsDash)&&r.tipo!=='provisionado')
+  const md=despesas.filter(d=>d.data&&monthMatchFilter(d.data,selectedMonthsDash)&&d.tipo!=='provisionado')
   const recT=sumBy(mr,r=>r.status==='recebido')
   const depT=sumBy(md,d=>d.status==='pago')
   const luc=recT-depT,mar=recT>0?(luc/recT)*100:0
@@ -1056,6 +1090,7 @@ function renderDashboard(){
   const aP=sumBy(despesas,d=>d.status!=='pago'&&d.tipo!=='provisionado')
   const rQ=receitas.filter(r=>r.status!=='recebido'&&r.tipo!=='provisionado').length
   const pQ=despesas.filter(d=>d.status!=='pago'&&d.tipo!=='provisionado').length
+  const periodSub=!selectedMonthsDash.length?'todos os meses':selectedMonthsDash.length===1?monthLabel(selectedMonthsDash[0]):selectedMonthsDash.length+' meses'
   document.getElementById('kpi-receita').textContent=fmt(recT)
   document.getElementById('kpi-despesas').textContent=fmt(depT)
   document.getElementById('kpi-lucro').textContent=fmt(luc)
@@ -1064,7 +1099,9 @@ function renderDashboard(){
   document.getElementById('kpi-pagar').textContent=fmt(aP)
   document.getElementById('kpi-receber-ct').textContent=rQ+' lançamento'+(rQ!==1?'s':'')
   document.getElementById('kpi-pagar-ct').textContent=pQ+' lançamento'+(pQ!==1?'s':'')
+  document.getElementById('kpi-receita-sub').textContent=periodSub
   document.getElementById('chart-year').textContent=CUR_YEAR
+  updateDashPeriodLabel()
 
   // Overdue clients - ALL months
   const overdue=receitas.filter(r=>r.status==='atrasado').sort((a,b)=>a.data.localeCompare(b.data))
@@ -1388,6 +1425,7 @@ async function enterApp(){
   document.getElementById('period-badge').textContent=MONTH_NAMES[NOW.getMonth()]+' '+CUR_YEAR
   selectedMonthsRec=[CUR_MONTH_KEY]
   selectedMonthsDesp=[CUR_MONTH_KEY]
+  selectedMonthsDash=[CUR_MONTH_KEY]
   navigate('dashboard')
 }
 
