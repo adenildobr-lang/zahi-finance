@@ -1350,6 +1350,14 @@ tr:hover td{background:var(--blueDD);}
 
             <div><label class="form-label">Meta Mensal de Despesas (R$)</label><input class="form-input" type="number" id="cfg-meta-despesas" placeholder="0,00 (deixe 0 para não usar)"/></div>
 
+            <div style="grid-column:1/-1;background:var(--blueDD);border:1px solid var(--border2);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+              <input type="checkbox" id="cfg-setor-alimentacao" style="width:18px;height:18px;accent-color:var(--blue);cursor:pointer;flex-shrink:0"/>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--t1)">Setor de Alimentação</div>
+                <div style="font-size:11px;color:var(--t3);margin-top:2px">Ativa o indicador CMV (Custo de Mercadoria Vendida) no Relatório Executivo — exclusivo para food service e gastronomia</div>
+              </div>
+            </div>
+
           </div>
 
           <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px">
@@ -1732,9 +1740,9 @@ function skipOnboarding(){localStorage.setItem(ONBOARD_KEY,'1');document.getElem
 
 function isMobile(){return window.innerWidth<=768}
 
-async function savePerfil(){const btn=document.getElementById('cfg-save-btn');btn.textContent='Salvando...';btn.disabled=true;const payload={user_id:currentUser.id,nome_empresa:document.getElementById('cfg-nome-empresa').value,responsavel:document.getElementById('cfg-responsavel').value,cnpj:document.getElementById('cfg-cnpj').value,segmento:document.getElementById('cfg-segmento').value,email_empresa:document.getElementById('cfg-email').value,telefone:document.getElementById('cfg-telefone').value,meta_faturamento:parseFloat(document.getElementById('cfg-meta-fat').value)||20000,meta_lucro:parseFloat(document.getElementById('cfg-meta-lucro').value)||12000,saldo_inicial:parseFloat(document.getElementById('cfg-saldo-inicial').value)||0,regime_tributario:document.getElementById('cfg-regime').value};const{data,error}=await sb.from('perfis').upsert(payload,{onConflict:'user_id'}).select().single();const metaDesp=parseFloat(document.getElementById('cfg-meta-despesas').value)||0;setMetaDespesas(metaDesp);if(error)alert('Erro: '+error.message);else{perfilData=data;alert('✅ Configurações salvas com sucesso!')}btn.textContent='Salvar Configurações';btn.disabled=false}
+async function savePerfil(){const btn=document.getElementById('cfg-save-btn');btn.textContent='Salvando...';btn.disabled=true;const payload={user_id:currentUser.id,nome_empresa:document.getElementById('cfg-nome-empresa').value,responsavel:document.getElementById('cfg-responsavel').value,cnpj:document.getElementById('cfg-cnpj').value,segmento:document.getElementById('cfg-segmento').value,email_empresa:document.getElementById('cfg-email').value,telefone:document.getElementById('cfg-telefone').value,meta_faturamento:parseFloat(document.getElementById('cfg-meta-fat').value)||20000,meta_lucro:parseFloat(document.getElementById('cfg-meta-lucro').value)||12000,saldo_inicial:parseFloat(document.getElementById('cfg-saldo-inicial').value)||0,regime_tributario:document.getElementById('cfg-regime').value};const{data,error}=await sb.from('perfis').upsert(payload,{onConflict:'user_id'}).select().single();const metaDesp=parseFloat(document.getElementById('cfg-meta-despesas').value)||0;setMetaDespesas(metaDesp);localStorage.setItem('zahi_setor_alim_'+(empresaAtiva||currentUser.id),document.getElementById('cfg-setor-alimentacao').checked?'true':'false');if(error)alert('Erro: '+error.message);else{perfilData=data;alert('✅ Configurações salvas com sucesso!')}btn.textContent='Salvar Configurações';btn.disabled=false}
 
-function loadPerfil(){document.getElementById('cfg-nome-empresa').value=perfilData.nome_empresa||'';document.getElementById('cfg-responsavel').value=perfilData.responsavel||'';document.getElementById('cfg-cnpj').value=perfilData.cnpj||'';document.getElementById('cfg-segmento').value=perfilData.segmento||'';document.getElementById('cfg-email').value=perfilData.email_empresa||'';document.getElementById('cfg-telefone').value=perfilData.telefone||'';document.getElementById('cfg-meta-fat').value=perfilData.meta_faturamento||20000;document.getElementById('cfg-meta-lucro').value=perfilData.meta_lucro||12000;document.getElementById('cfg-saldo-inicial').value=perfilData.saldo_inicial||0;document.getElementById('cfg-regime').value=perfilData.regime_tributario||'Simples Nacional';document.getElementById('cfg-meta-despesas').value=getMetaDespesas()||''}
+function loadPerfil(){document.getElementById('cfg-nome-empresa').value=perfilData.nome_empresa||'';document.getElementById('cfg-responsavel').value=perfilData.responsavel||'';document.getElementById('cfg-cnpj').value=perfilData.cnpj||'';document.getElementById('cfg-segmento').value=perfilData.segmento||'';document.getElementById('cfg-email').value=perfilData.email_empresa||'';document.getElementById('cfg-telefone').value=perfilData.telefone||'';document.getElementById('cfg-meta-fat').value=perfilData.meta_faturamento||20000;document.getElementById('cfg-meta-lucro').value=perfilData.meta_lucro||12000;document.getElementById('cfg-saldo-inicial').value=perfilData.saldo_inicial||0;document.getElementById('cfg-regime').value=perfilData.regime_tributario||'Simples Nacional';document.getElementById('cfg-meta-despesas').value=getMetaDespesas()||'';document.getElementById('cfg-setor-alimentacao').checked=localStorage.getItem('zahi_setor_alim_'+(empresaAtiva||currentUser?.id))==='true'}
 
 function renderClassifList(){const el=document.getElementById('classif-list');if(!classificacoesCustom.length){el.innerHTML='<div style="text-align:center;padding:24px;color:var(--t3);font-size:13px">Nenhuma classificação personalizada criada ainda.</div>';return}el.innerHTML=classificacoesCustom.map(c=>`<div class="classif-item"><div><div class="classif-name">${c.nome}</div><div class="classif-tipo">${{receita:'Receitas',despesa:'Despesas',ambos:'Receitas e Despesas'}[c.tipo]||c.tipo}</div></div><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="editClassif('${c.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteClassif('${c.id}')">Excluir</button></div></div>`).join('')}
 
@@ -1858,15 +1866,54 @@ function renderExecutivo(){
   const sub=months.length===1?monthLabel(months[0]):months.length>1?months.length+' meses selecionados':'Todos os períodos'
   const el=document.getElementById('exec-subtitle');if(el)el.textContent=sub
 
+  // Período anterior para comparativo MoM
+  let prevMonths=[]
+  if(months.length===1){
+    const[y,m]=months[0].split('-').map(Number)
+    const pm=m===1?12:m-1;const py=m===1?y-1:y
+    prevMonths=[`${py}-${String(pm).padStart(2,'0')}`]
+  }else if(months.length>1){
+    const sorted=[...months].sort()
+    const[y,m]=sorted[0].split('-').map(Number)
+    const baseDate=new Date(y,m-1,1)
+    for(let i=months.length-1;i>=0;i--){const dd=new Date(baseDate);dd.setMonth(dd.getMonth()-months.length+i);prevMonths.push(`${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}`)}
+  }
+  const rP=receitas.filter(x=>prevMonths.some(m=>x.data?.startsWith(m)))
+  const dP=despesas.filter(x=>prevMonths.some(m=>x.data?.startsWith(m)))
+  const recRealP=sumBy(rP,x=>x.tipo!=='provisionado'&&x.status==='recebido')
+  const despPagoP=sumBy(dP,x=>x.tipo!=='provisionado'&&x.status==='pago')
+  const lucroP=recRealP-despPagoP
+  const margemP=recRealP>0?(lucroP/recRealP)*100:0
+  const momStr=(curr,prev,isPercent)=>{
+    if(!prevMonths.length||!prev)return''
+    const delta=isPercent?curr-prev:((curr-prev)/prev)*100
+    const sinal=delta>=0?'↑':'↓'
+    const label=isPercent?Math.abs(delta).toFixed(1)+'pp':Math.abs(delta).toFixed(1)+'%'
+    return`${sinal} ${label} vs mês anterior`
+  }
+  const momDir=(curr,prev,inverted)=>{
+    if(!prevMonths.length||!prev)return''
+    const up=curr>=prev;return(inverted?!up:up)?'up':'down'
+  }
+
+  // CMV — Custo de Mercadoria Vendida (setor alimentação)
+  const setorAlim=localStorage.getItem('zahi_setor_alim_'+(empresaAtiva||currentUser?.id))==='true'
+  const CMV_CAT=['Matéria-Prima','Insumos','Alimentos','Bebidas','CMV','Compras','Mercearia','Hortifrúti','Carnes','Ingredientes','Açougue','Peixaria','Alimento','Ingrediente']
+  const cmv=setorAlim?sumBy(d,x=>x.tipo!=='provisionado'&&x.status==='pago'&&CMV_CAT.some(c=>c.toLowerCase()===(x.classificacao||'').toLowerCase())):0
+  const cmvPct=recReal>0?(cmv/recReal)*100:0
+  const cmvP=setorAlim?sumBy(dP,x=>x.tipo!=='provisionado'&&x.status==='pago'&&CMV_CAT.some(c=>c.toLowerCase()===(x.classificacao||'').toLowerCase())):0
+
   // KPI Cards
   const grid=document.getElementById('exec-kpi-grid')
   const margemColor=margem>=15?'var(--green)':margem>=8?'var(--amber)':'var(--red)'
-  if(grid)grid.innerHTML=[
-    {label:'Receita Realizada',val:fmt(recReal),icon:'📈',cls:'blue',trend:recReal>0?'↑ Recebido no período':'Sem receitas'},
-    {label:'Despesas Pagas',val:fmt(despPago),icon:'📤',cls:'red',trend:despPago>0?`${recReal>0?((despPago/recReal)*100).toFixed(1)+'% da receita':'—'}`:'Sem despesas'},
-    {label:'Lucro Líquido',val:fmt(lucro),icon:'💰',cls:'green',trend:lucro>=0?'Resultado positivo':'Resultado negativo',trendDir:lucro>=0?'up':'down'},
-    {label:'Margem Líquida',val:margem.toFixed(1)+'%',icon:'🎯',cls:'purple',trend:margem>=15?'Excelente':margem>=8?'Dentro do esperado':'Abaixo do ideal',trendDir:margem>=8?'up':'down'},
-  ].map(k=>`<div class="exec-kpi ${k.cls}"><div class="exec-kpi-icon">${k.icon}</div><div class="exec-kpi-label">${k.label}</div><div class="exec-kpi-value">${k.val}</div><div class="exec-kpi-trend ${k.trendDir||''}">${k.trend}</div></div>`).join('')
+  const kpiList=[
+    {label:'Receita Realizada',val:fmt(recReal),icon:'📈',cls:'blue',trend:momStr(recReal,recRealP,false)||'Recebido no período',trendDir:momDir(recReal,recRealP,false)},
+    {label:'Despesas Pagas',val:fmt(despPago),icon:'📤',cls:'red',trend:momStr(despPago,despPagoP,false)||(recReal>0?((despPago/recReal)*100).toFixed(1)+'% da receita':'Sem despesas'),trendDir:momDir(despPago,despPagoP,true)},
+    {label:'Lucro Líquido',val:fmt(lucro),icon:'💰',cls:'green',trend:momStr(lucro,lucroP,false)||(lucro>=0?'Resultado positivo':'Resultado negativo'),trendDir:lucro>=0?'up':'down'},
+    {label:'Margem Líquida',val:margem.toFixed(1)+'%',icon:'🎯',cls:'purple',trend:momStr(margem,margemP,true)||(margem>=15?'Excelente':margem>=8?'Dentro do esperado':'Abaixo do ideal'),trendDir:margem>=8?'up':'down'},
+  ]
+  if(setorAlim)kpiList.push({label:'CMV — Custo Mercadoria',val:fmt(cmv),icon:'🧾',cls:'blue',trend:(cmvPct>0?cmvPct.toFixed(1)+'% da receita':momStr(cmv,cmvP,false)||'Sem lançamentos CMV')+(cmvPct>0&&cmvPct<=35?' ✓ ideal':cmvPct>38?' ⚠ acima do ideal':''),trendDir:cmvPct>0&&cmvPct<=38?'up':'down'})
+  if(grid)grid.innerHTML=kpiList.map(k=>`<div class="exec-kpi ${k.cls}"><div class="exec-kpi-icon">${k.icon}</div><div class="exec-kpi-label">${k.label}</div><div class="exec-kpi-value">${k.val}</div><div class="exec-kpi-trend ${k.trendDir||''}">${k.trend}</div></div>`).join('')
 
   // Waterfall chart
   const wCtx=document.getElementById('chartWaterfall')?.getContext('2d')
@@ -1915,11 +1962,16 @@ function renderExecutivo(){
     const desp12=months12.map(m=>sumBy(despesas.filter(x=>x.data?.startsWith(m)&&x.status==='pago'&&x.tipo!=='provisionado'),()=>true))
     const luc12=rec12.map((v,i)=>v-desp12[i])
     const labels12=months12.map(m=>{const[y,mo]=m.split('-');return MONTH_SHORT[parseInt(mo)-1]+(y!==String(CUR_YEAR)?`'${y.slice(2)}`:'')})
-    chartEx12=new Chart(ex12Ctx,{type:'line',data:{labels:labels12,datasets:[
+    const metaFat=perfilData.meta_faturamento||0
+    const despFixaMensal=recorrencias.filter(r=>r.ativo&&r.tipo==='despesa'&&r.frequencia==='mensal').reduce((s,r)=>s+(r.valor||0),0)
+    const datasets12=[
       {label:'Receita',data:rec12,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',fill:true,tension:.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#2563eb'},
       {label:'Despesas',data:desp12,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.07)',fill:true,tension:.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#ef4444'},
       {label:'Lucro',data:luc12,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.07)',fill:true,tension:.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#10b981'},
-    ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:10},color:'#8da4c4'}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtReal(c.raw)}}},scales:{y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>v>=1000?'R$'+(v/1000).toFixed(0)+'k':'R$'+v,font:{size:10},color:'#8da4c4'},border:{display:false}},x:{grid:{display:false},ticks:{font:{size:10},color:'#8da4c4'},border:{display:false}}}}})
+    ]
+    if(metaFat>0)datasets12.push({label:'Meta Faturamento',data:months12.map(()=>metaFat),borderColor:'#f59e0b',backgroundColor:'transparent',borderWidth:1.5,borderDash:[6,4],pointRadius:0,tension:0})
+    if(despFixaMensal>0)datasets12.push({label:'Custos Fixos',data:months12.map(()=>despFixaMensal),borderColor:'rgba(239,68,68,.5)',backgroundColor:'transparent',borderWidth:1.5,borderDash:[3,4],pointRadius:0,tension:0})
+    chartEx12=new Chart(ex12Ctx,{type:'line',data:{labels:labels12,datasets:datasets12},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:10},color:'#8da4c4'}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtReal(c.raw)}}},scales:{y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{callback:v=>v>=1000?'R$'+(v/1000).toFixed(0)+'k':'R$'+v,font:{size:10},color:'#8da4c4'},border:{display:false}},x:{grid:{display:false},ticks:{font:{size:10},color:'#8da4c4'},border:{display:false}}}}})
   }
 
   // Top despesas por categoria
