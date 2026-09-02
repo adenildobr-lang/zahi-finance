@@ -508,12 +508,19 @@ tr:hover td{background:var(--blueDD);}
 
 @media(max-width:768px){
 
-  #sidebar{position:fixed;top:0;left:0;height:100vh;z-index:700;transform:translateX(0);transition:transform .25s;}
+  /* Sidebar: oculta por padrão, desliza com .mobile-open */
+  #sidebar{position:fixed;top:0;left:0;height:100vh;z-index:700;width:240px!important;min-width:240px!important;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);box-shadow:4px 0 24px rgba(0,0,0,.4);}
 
-  #sidebar.collapsed{transform:translateX(-100%);width:228px;min-width:228px;}
+  #sidebar.collapsed{width:240px!important;min-width:240px!important;transform:translateX(-100%);}
 
-  #content{padding:14px;}
+  #sidebar.mobile-open{transform:translateX(0);}
 
+  /* Main area ocupa 100% da tela */
+  #main-area{width:100%;}
+
+  #content{padding:12px;}
+
+  /* KPI grids em 2 colunas */
   .kpi-grid,.kpi-grid-4{grid-template-columns:repeat(2,1fr);gap:8px;}
 
   .charts-row,.charts-row2{grid-template-columns:1fr;}
@@ -524,7 +531,7 @@ tr:hover td{background:var(--blueDD);}
 
   .form-full{grid-column:1;}
 
-  .modal-box{margin:16px;padding:20px;max-width:calc(100vw - 32px);}
+  .modal-box{margin:12px;padding:18px;max-width:calc(100vw - 24px);max-height:90vh;overflow-y:auto;}
 
   .topbar-title{font-size:13px;}
 
@@ -538,20 +545,57 @@ tr:hover td{background:var(--blueDD);}
 
   .section-header{flex-direction:column;align-items:flex-start;gap:8px;}
 
-  .ms-btn{min-width:140px;}
+  .ms-btn{min-width:120px;font-size:10px;padding:6px 8px;}
 
-  #topbar{padding:0 14px;gap:8px;}
+  #topbar{padding:0 12px;gap:8px;height:54px;}
 
   .user-name{display:none;}
+
+  /* Empresa selector no topbar mais compacto */
+  #empresa-selector-wrap select{max-width:100px;}
+
+  /* Exec KPIs em 2 colunas */
+  .exec-kpi-grid{grid-template-columns:1fr 1fr!important;}
+
+  /* Exec rows empilhados */
+  .exec-row,.exec-row-3{grid-template-columns:1fr!important;}
+
+  /* Tabelas com scroll horizontal */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* Cards com padding menor */
+  .card-pad{padding:14px;}
+
+  /* Scorecard compacto */
+  .score-row{gap:6px;}
+  .score-label{font-size:10px;min-width:100px;}
+  .score-val{font-size:12px;}
+
+  /* Gauge menor */
+  .gauge-wrap{height:180px;}
+
+  /* Waterfall chart menor */
+  .waterfall-wrap{height:180px;}
+
+  /* Recorrências */
+  .recorr-header{flex-direction:column;gap:8px;}
 
 }
 
 @media(max-width:480px){
-
-  .kpi-value{font-size:16px;}
-
+  .kpi-value{font-size:15px;}
   .kpi-grid,.kpi-grid-4{grid-template-columns:1fr 1fr;}
+  .exec-kpi-value{font-size:17px!important;}
+  .auth-box{padding:28px 20px;margin:16px;}
+  #content{padding:10px;}
+}
 
+@media(min-width:769px) and (max-width:1024px){
+  #sidebar{width:196px;min-width:196px;}
+  .kpi-grid,.kpi-grid-4{grid-template-columns:repeat(2,1fr);}
+  .charts-row{grid-template-columns:1fr;}
+  .exec-kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .exec-row,.exec-row-3{grid-template-columns:1fr;}
 }
 
 @media(max-width:900px){
@@ -1791,9 +1835,10 @@ document.addEventListener('click',e=>{if(!e.target.closest('.ms-wrap'))document.
 
 const VIEW_TITLES={dashboard:'Dashboard',receitas:'Receitas',despesas:'Despesas',receber:'Contas a Receber',pagar:'Contas a Pagar',fluxo:'Fluxo de Caixa',dre:'DRE Gerencial',executivo:'Relatório Executivo',comparativos:'Comparativos',extrato:'Extrato por Cliente',recorrencias:'Recorrências',historico:'Histórico de Alterações',config:'Configurações'}
 
-function navigate(view){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));const el=document.getElementById('view-'+view);if(el){el.classList.add('active');el.classList.remove('fade-in');void el.offsetWidth;el.classList.add('fade-in')}const nav=document.getElementById('nav-'+view);if(nav)nav.classList.add('active');document.getElementById('topbar-title').textContent=VIEW_TITLES[view]||view;if(view==='dashboard'){buildMSPanel('dash',selectedMonthsDash,'renderDashboard');updateDashPeriodLabel();renderDashboard()}if(view==='extrato')renderExtrato();if(view==='receitas'){buildMSPanel('rec',selectedMonthsRec,'renderReceitas');renderReceitas()}if(view==='despesas'){buildMSPanel('desp',selectedMonthsDesp,'renderDespesas');renderDespesas()}if(view==='receber'){buildMSPanel('receber',selectedMonthsReceber,'renderReceber');renderReceber()}if(view==='pagar'){buildMSPanel('pagar',selectedMonthsPagar,'renderPagar');renderPagar()}if(view==='historico')renderHistorico();if(view==='fluxo')renderFluxo();if(view==='dre'){setDRECurrentMonth();renderDRE()}if(view==='executivo'){selectedMonthsExec=[CUR_MONTH_KEY];renderExecMS();renderExecutivo();}if(view==='comparativos')renderComparativos();if(view==='recorrencias')renderRecorrencias();if(view==='config'){loadPerfil();renderClassifList()}}
+function navigate(view){closeMobileSidebar();document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));const el=document.getElementById('view-'+view);if(el){el.classList.add('active');el.classList.remove('fade-in');void el.offsetWidth;el.classList.add('fade-in')}const nav=document.getElementById('nav-'+view);if(nav)nav.classList.add('active');document.getElementById('topbar-title').textContent=VIEW_TITLES[view]||view;if(view==='dashboard'){buildMSPanel('dash',selectedMonthsDash,'renderDashboard');updateDashPeriodLabel();renderDashboard()}if(view==='extrato')renderExtrato();if(view==='receitas'){buildMSPanel('rec',selectedMonthsRec,'renderReceitas');renderReceitas()}if(view==='despesas'){buildMSPanel('desp',selectedMonthsDesp,'renderDespesas');renderDespesas()}if(view==='receber'){buildMSPanel('receber',selectedMonthsReceber,'renderReceber');renderReceber()}if(view==='pagar'){buildMSPanel('pagar',selectedMonthsPagar,'renderPagar');renderPagar()}if(view==='historico')renderHistorico();if(view==='fluxo')renderFluxo();if(view==='dre'){setDRECurrentMonth();renderDRE()}if(view==='executivo'){selectedMonthsExec=[CUR_MONTH_KEY];renderExecMS();renderExecutivo();}if(view==='comparativos')renderComparativos();if(view==='recorrencias')renderRecorrencias();if(view==='config'){loadPerfil();renderClassifList()}}
 
-function toggleSidebar(){const sb=document.getElementById('sidebar');const ov=document.getElementById('sidebar-overlay');sb.classList.toggle('collapsed');if(isMobile()){ov.style.display=sb.classList.contains('collapsed')?'none':'block'}}
+function toggleSidebar(){const sb=document.getElementById('sidebar');const ov=document.getElementById('sidebar-overlay');if(isMobile()){const open=sb.classList.toggle('mobile-open');ov.style.display=open?'block':'none'}else{sb.classList.toggle('collapsed')}}
+function closeMobileSidebar(){if(!isMobile())return;const sb=document.getElementById('sidebar');const ov=document.getElementById('sidebar-overlay');sb.classList.remove('mobile-open');ov.style.display='none'}
 
 function computeMonthly(){const months=[];for(let m=0;m<12;m++){const key=`${CUR_YEAR}-${String(m+1).padStart(2,'0')}`;const mr=receitas.filter(r=>r.data&&r.data.startsWith(key)&&r.tipo!=='provisionado');const md=despesas.filter(d=>d.data&&d.data.startsWith(key)&&d.tipo!=='provisionado');const rec=sumBy(mr,r=>r.status==='recebido');const dep=sumBy(md,d=>d.status==='pago');if(rec>0||dep>0)months.push({mes:MONTH_SHORT[m],receita:rec,despesa:dep,lucro:rec-dep})}return months.length?months:[{mes:MONTH_SHORT[NOW.getMonth()],receita:0,despesa:0,lucro:0}]}
 
