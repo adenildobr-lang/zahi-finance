@@ -1644,8 +1644,11 @@ async function logout(){await sb.auth.signOut();currentUser=null;receitas=[];des
 
 async function loadAllData(){document.getElementById('loading-screen').style.display='flex';document.getElementById('app-screen').style.display='none';
   // Carrega perfil do usuário logado
-  const{data:prof}=await sb.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
-  perfilData=prof||{};
+  const[{data:prof},{data:perfCfg}]=await Promise.all([
+    sb.from('profiles').select('*').eq('id',currentUser.id).maybeSingle(),
+    sb.from('perfis').select('*').eq('user_id',currentUser.id).maybeSingle()
+  ]);
+  perfilData={...(prof||{}),...(perfCfg||{})};
   papelUsuario=prof?.papel||'dono';
   // Consultor: carrega lista de empresas e pode alternar
   if(papelUsuario==='consultor'){
