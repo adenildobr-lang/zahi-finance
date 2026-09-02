@@ -1569,6 +1569,49 @@ tr:hover td{background:var(--blueDD);}
 
 </div>
 
+<!-- QUICK ENTRY SHEET -->
+<div id="qe-overlay" onclick="closeQuickEntry()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:870;backdrop-filter:blur(4px)"></div>
+<div id="qe-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:880;background:var(--bg1);border-top:1px solid var(--border2);border-radius:24px 24px 0 0;padding:0 0 32px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);">
+  <!-- Handle -->
+  <div style="width:44px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 0;"></div>
+  <!-- Toggle Receita/Despesa -->
+  <div style="display:flex;gap:8px;margin:16px 16px 0;background:var(--bg2);border-radius:14px;padding:4px;">
+    <button id="qe-btn-rec" onclick="setQEType('receita')" style="flex:1;padding:10px;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;background:var(--blue);color:#fff;">📥 Receita</button>
+    <button id="qe-btn-desp" onclick="setQEType('despesa')" style="flex:1;padding:10px;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;background:transparent;color:var(--t3);">📤 Despesa</button>
+  </div>
+  <!-- Valor (destaque) -->
+  <div style="margin:14px 16px 0;">
+    <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Valor (R$)</div>
+    <input id="qe-valor" type="number" inputmode="decimal" placeholder="0,00" style="width:100%;background:var(--bg2);border:2px solid var(--border2);border-radius:12px;padding:14px 16px;color:var(--t1);font-size:22px;font-weight:700;font-family:'Sora',sans-serif;outline:none;transition:border .15s;" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border2)'"/>
+  </div>
+  <!-- Descrição -->
+  <div style="margin:10px 16px 0;">
+    <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Descrição</div>
+    <input id="qe-descricao" type="text" placeholder="Ex: Consultoria mensal" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:12px 14px;color:var(--t1);font-size:14px;font-family:'Sora',sans-serif;outline:none;transition:border .15s;" onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border2)'"/>
+  </div>
+  <!-- Classificação + Status -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 16px 0;">
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Classificação</div>
+      <select id="qe-classif" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:11px 12px;color:var(--t1);font-size:13px;font-family:'Sora',sans-serif;outline:none;"></select>
+    </div>
+    <div>
+      <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Status</div>
+      <select id="qe-status" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:11px 12px;color:var(--t1);font-size:13px;font-family:'Sora',sans-serif;outline:none;"></select>
+    </div>
+  </div>
+  <!-- Data -->
+  <div style="margin:10px 16px 0;">
+    <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Data</div>
+    <input id="qe-data" type="date" style="width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:11px 14px;color:var(--t1);font-size:14px;font-family:'Sora',sans-serif;outline:none;"/>
+  </div>
+  <!-- Botão Salvar -->
+  <div style="margin:16px 16px 0;">
+    <button id="qe-save-btn" onclick="saveQuickEntry()" style="width:100%;padding:16px;border:none;border-radius:14px;font-family:'Sora',sans-serif;font-size:15px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;transition:opacity .15s;box-shadow:0 4px 16px rgba(37,99,235,.35);">Salvar Lançamento</button>
+  </div>
+  <div id="qe-msg" style="text-align:center;font-size:12px;margin-top:10px;min-height:16px;color:var(--green);"></div>
+</div>
+
 <!-- MOBILE NAV SHEET -->
 <div id="mobile-nav-overlay" onclick="closeMobileNav()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:850;backdrop-filter:blur(3px)"></div>
 <div id="mobile-nav-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:860;background:var(--bg1);border-top:1px solid var(--border2);border-radius:20px 20px 0 0;padding:12px 0 28px;transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);">
@@ -1797,10 +1840,81 @@ function exportMonthlyPDF(){const fmt=fmtReal // PDF sempre mostra valores reais
   const mr=receitas.filter(r=>r.data&&r.data.startsWith(CUR_MONTH_KEY));const md=despesas.filter(d=>d.data&&d.data.startsWith(CUR_MONTH_KEY));const recTotal=sumBy(mr,r=>r.status==='recebido');const depTotal=sumBy(md,d=>d.status==='pago');const lucro=recTotal-depTotal;const margem=recTotal>0?(lucro/recTotal)*100:0;const empresa=perfilData.nome_empresa||'Empresa';const mes=MONTH_NAMES[NOW.getMonth()]+'/'+CUR_YEAR;const today=NOW.toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});const recRows=mr.map(r=>`<tr style="border-bottom:1px solid #e8eef8"><td style="padding:7px 10px">${fmtDate(r.data)}</td><td style="padding:7px 10px">${r.cliente||''}</td><td style="padding:7px 10px">${r.descricao||''}</td><td style="padding:7px 10px">${r.classificacao||''}</td><td style="padding:7px 10px;color:#10b981;font-weight:600">${fmt(r.valor)}</td><td style="padding:7px 10px"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${r.status==='recebido'?'#d1fae5':'#fef3c7'};color:${r.status==='recebido'?'#059669':'#d97706'}">${r.status}</span></td></tr>`).join('');const despRows=md.map(d=>`<tr style="border-bottom:1px solid #e8eef8"><td style="padding:7px 10px">${fmtDate(d.data)}</td><td style="padding:7px 10px">${d.fornecedor||''}</td><td style="padding:7px 10px">${d.descricao||''}</td><td style="padding:7px 10px">${d.classificacao||''}</td><td style="padding:7px 10px;color:#ef4444;font-weight:600">${fmt(d.valor)}</td><td style="padding:7px 10px"><span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${d.status==='pago'?'#d1fae5':'#fef3c7'};color:${d.status==='pago'?'#059669':'#d97706'}">${d.status}</span></td></tr>`).join('');const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório ${mes} — ${empresa}</title><style>body{font-family:'Segoe UI',sans-serif;color:#0f1f3d;padding:40px;font-size:13px;}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:3px solid #2563eb;}.logo{font-size:28px;font-weight:900;color:#2563eb;}.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;}.kpi{padding:14px;border:1px solid #e8eef8;border-radius:8px;text-align:center;}.kpi-label{font-size:10px;color:#4a5f82;font-weight:700;text-transform:uppercase;margin-bottom:6px;}.kpi-val{font-size:18px;font-weight:700;}.section{margin-bottom:24px;}.section-title{font-size:13px;font-weight:700;color:#4a5f82;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #e8eef8;}table{width:100%;border-collapse:collapse;}th{padding:8px 10px;text-align:left;font-size:10px;color:#4a5f82;font-weight:700;text-transform:uppercase;border-bottom:2px solid #e8eef8;}.footer{margin-top:32px;font-size:10px;color:#7a99bb;text-align:center;border-top:1px solid #e8eef8;padding-top:14px;}@media print{body{padding:20px;}}</style></head><body><div class="header"><div><div class="logo">Z</div><div style="font-size:11px;color:#4a5f82;margin-top:4px">Zahi Finance · Consultoria Zahi</div></div><div style="text-align:right"><div style="font-size:18px;font-weight:700">Relatório Mensal</div><div style="font-size:13px;color:#4a5f82">${empresa}</div><div style="font-size:12px;color:#7a99bb">${mes} · Gerado em ${today}</div></div></div><div class="kpi-row"><div class="kpi"><div class="kpi-label">Receita Recebida</div><div class="kpi-val" style="color:#10b981">${fmt(recTotal)}</div></div><div class="kpi"><div class="kpi-label">Despesas Pagas</div><div class="kpi-val" style="color:#ef4444">${fmt(depTotal)}</div></div><div class="kpi"><div class="kpi-label">Lucro Líquido</div><div class="kpi-val" style="color:#2563eb">${fmt(lucro)}</div></div><div class="kpi"><div class="kpi-label">Margem</div><div class="kpi-val" style="color:#8b5cf6">${margem.toFixed(1)}%</div></div></div><div class="section"><div class="section-title">Receitas do Mês (${mr.length} lançamentos)</div><table><thead><tr><th>Data</th><th>Cliente</th><th>Descrição</th><th>Classificação</th><th>Valor</th><th>Status</th></tr></thead><tbody>${recRows||'<tr><td colspan="6" style="padding:20px;text-align:center;color:#7a99bb">Sem receitas no período</td></tr>'}</tbody></table><div style="text-align:right;margin-top:8px;font-weight:700;color:#10b981">Total: ${fmt(mr.reduce((s,r)=>s+r.valor,0))}</div></div><div class="section"><div class="section-title">Despesas do Mês (${md.length} lançamentos)</div><table><thead><tr><th>Data</th><th>Fornecedor</th><th>Descrição</th><th>Classificação</th><th>Valor</th><th>Status</th></tr></thead><tbody>${despRows||'<tr><td colspan="6" style="padding:20px;text-align:center;color:#7a99bb">Sem despesas no período</td></tr>'}</tbody></table><div style="text-align:right;margin-top:8px;font-weight:700;color:#ef4444">Total: ${fmt(md.reduce((s,d)=>s+d.valor,0))}</div></div><div class="footer">Zahi Finance — Consultoria Zahi · Mentorias e Consultorias · Documento gerado automaticamente</div></body></html>`;const win=window.open('','_blank','width=1000,height=700');win.document.write(html);win.document.close();setTimeout(()=>win.print(),700)}
 
 let fabOpen=false
+let qeType='receita'
 
-function toggleFAB(){fabOpen=!fabOpen;document.getElementById('fab-menu').className='fab-menu'+(fabOpen?' open':'');document.getElementById('fab-main-btn').textContent=fabOpen?'✕':'＋'}
+function toggleFAB(){openQuickEntry()}
 
-function fabAction(type){fabOpen=false;document.getElementById('fab-menu').className='fab-menu';document.getElementById('fab-main-btn').textContent='＋';openModal(type)}
+function fabAction(type){openModal(type)}
+
+function openQuickEntry(){
+  qeType='receita'
+  const sheet=document.getElementById('qe-sheet')
+  const ov=document.getElementById('qe-overlay')
+  document.getElementById('qe-valor').value=''
+  document.getElementById('qe-descricao').value=''
+  document.getElementById('qe-data').value=NOW.toISOString().split('T')[0]
+  document.getElementById('qe-msg').textContent=''
+  setQEType('receita')
+  sheet.style.display='block';ov.style.display='block'
+  requestAnimationFrame(()=>sheet.style.transform='translateY(0)')
+  setTimeout(()=>document.getElementById('qe-valor').focus(),350)
+}
+
+function closeQuickEntry(){
+  const sheet=document.getElementById('qe-sheet')
+  const ov=document.getElementById('qe-overlay')
+  sheet.style.transform='translateY(100%)'
+  setTimeout(()=>{sheet.style.display='none';ov.style.display='none'},300)
+}
+
+function setQEType(type){
+  qeType=type
+  const isR=type==='receita'
+  const btnR=document.getElementById('qe-btn-rec')
+  const btnD=document.getElementById('qe-btn-desp')
+  btnR.style.background=isR?'var(--blue)':'transparent'
+  btnR.style.color=isR?'#fff':'var(--t3)'
+  btnD.style.background=!isR?'var(--red)':'transparent'
+  btnD.style.color=!isR?'#fff':'var(--t3)'
+  const classifs=getClassifs(isR?'receita':'despesa')
+  document.getElementById('qe-classif').innerHTML=classifs.map(c=>`<option>${c}</option>`).join('')
+  document.getElementById('qe-status').innerHTML=isR
+    ?'<option value="recebido">Recebido</option><option value="pendente">Pendente</option><option value="atrasado">Atrasado</option>'
+    :'<option value="pago">Pago</option><option value="pendente">Pendente</option><option value="atrasado">Atrasado</option>'
+}
+
+async function saveQuickEntry(){
+  const valor=parseFloat(document.getElementById('qe-valor').value)||0
+  const descricao=document.getElementById('qe-descricao').value.trim()
+  if(!valor||!descricao){
+    document.getElementById('qe-msg').style.color='var(--red)'
+    document.getElementById('qe-msg').textContent='Preencha o valor e a descrição.'
+    return
+  }
+  const btn=document.getElementById('qe-save-btn')
+  btn.textContent='Salvando...';btn.disabled=true
+  const item={
+    data:document.getElementById('qe-data').value,
+    valor,descricao,
+    classificacao:document.getElementById('qe-classif').value,
+    status:document.getElementById('qe-status').value,
+    tipo:'realizado',
+    forma:'pix'
+  }
+  const isR=qeType==='receita'
+  const result=isR?await addReceita(item):await addDespesa(item)
+  btn.textContent='Salvar Lançamento';btn.disabled=false
+  if(result){
+    document.getElementById('qe-msg').style.color='var(--green)'
+    document.getElementById('qe-msg').textContent='✅ Lançamento salvo!'
+    document.getElementById('qe-valor').value=''
+    document.getElementById('qe-descricao').value=''
+    setTimeout(()=>closeQuickEntry(),1200)
+  } else {
+    document.getElementById('qe-msg').style.color='var(--red)'
+    document.getElementById('qe-msg').textContent='Erro ao salvar. Tente novamente.'
+  }
+}
 
 function showFAB(){document.getElementById('fab-wrap').classList.add('visible')}
 
