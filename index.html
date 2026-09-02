@@ -758,6 +758,12 @@ tr:hover td{background:var(--blueDD);}
 
       <div class="topbar-spacer"></div>
 
+      <!-- Seletor de empresa (visível apenas para consultor) -->
+      <div id="empresa-selector-wrap" style="display:none;align-items:center;gap:6px;background:var(--blueDD);border:1px solid var(--border2);border-radius:20px;padding:4px 4px 4px 12px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blueL)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <select id="empresa-select" onchange="trocarEmpresa(this.value)" style="background:transparent;border:none;color:var(--blueL);font-size:11px;font-weight:600;font-family:'Sora',sans-serif;outline:none;cursor:pointer;max-width:160px;"></select>
+      </div>
+
       <div class="period-badge" id="period-badge"></div>
 
       <button class="icon-btn" onclick="toggleValuesVisibility()" id="values-btn" title="Ocultar/mostrar valores" style="flex-shrink:0">
@@ -1413,6 +1419,8 @@ const sb=supabase.createClient(SUPA_URL,SUPA_KEY)
 
 let receitas=[],despesas=[],perfilData={},classificacoesCustom=[],recorrencias=[]
 
+let empresaAtiva=null,papelUsuario=null,empresasList=[]
+
 let currentUser=null,currentModalType='',currentTipo='realizado',editingClassifId=null
 
 let editingId=null,editingType=null
@@ -1511,7 +1519,40 @@ async function handlePasswordReset(){const p1=document.getElementById('reset-pas
 
 async function logout(){await sb.auth.signOut();currentUser=null;receitas=[];despesas=[];perfilData={};classificacoesCustom=[];recorrencias=[];document.getElementById('app-screen').style.display='none';document.getElementById('auth-screen').style.display='flex';document.getElementById('auth-email').value='';document.getElementById('auth-password').value='';setAuthMode('login')}
 
-async function loadAllData(){document.getElementById('loading-screen').style.display='flex';document.getElementById('app-screen').style.display='none';const[{data:r},{data:d},{data:p},{data:cl},{data:rc}]=await Promise.all([sb.from('receitas').select('*').order('data',{ascending:false}),sb.from('despesas').select('*').order('data',{ascending:false}),sb.from('perfis').select('*').eq('user_id',currentUser.id).maybeSingle(),sb.from('classificacoes').select('*').order('nome'),sb.from('recorrencias').select('*').order('created_at',{ascending:false})]);receitas=r||[];despesas=d||[];perfilData=p||{};classificacoesCustom=cl||[];recorrencias=rc||[];await processRecorrencias();document.getElementById('loading-screen').style.display='none';document.getElementById('app-screen').style.display='flex'}
+async function loadAllData(){document.getElementById('loading-screen').style.display='flex';document.getElementById('app-screen').style.display='none';
+  // Carrega perfil do usuário logado
+  const{data:prof}=await sb.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+  perfilData=prof||{};
+  papelUsuario=prof?.papel||'dono';
+  // Consultor: carrega lista de empresas e pode alternar
+  if(papelUsuario==='consultor'){
+    const{data:emps}=await sb.from('empresas').select('id,nome').order('nome');
+    empresasList=emps||[];
+    if(!empresaAtiva&&empresasList.length)empresaAtiva=empresasList[0].id;
+    renderEmpresaSelector();
+  }else{
+    empresaAtiva=prof?.empresa_id||null;
+    document.getElementById('empresa-selector-wrap').style.display='none';
+  }
+  // Carrega dados filtrados pela empresa ativa (RLS + filtro explícito)
+  let qr=sb.from('receitas').select('*').order('data',{ascending:false});
+  let qd=sb.from('despesas').select('*').order('data',{ascending:false});
+  let qrc=sb.from('recorrencias').select('*').order('criado_em',{ascending:false});
+  if(empresaAtiva){qr=qr.eq('empresa_id',empresaAtiva);qd=qd.eq('empresa_id',empresaAtiva);qrc=qrc.eq('empresa_id',empresaAtiva)}
+  const[{data:r},{data:d},{data:rc}]=await Promise.all([qr,qd,qrc]);
+  receitas=r||[];despesas=d||[];classificacoesCustom=[];recorrencias=rc||[];
+  await processRecorrencias();document.getElementById('loading-screen').style.display='none';document.getElementById('app-screen').style.display='flex'
+}
+
+function renderEmpresaSelector(){
+  const wrap=document.getElementById('empresa-selector-wrap');
+  if(!wrap||papelUsuario!=='consultor')return;
+  wrap.style.display='flex';
+  const sel=document.getElementById('empresa-select');
+  sel.innerHTML=empresasList.map(e=>`<option value="${e.id}"${e.id===empresaAtiva?' selected':''}>${e.nome}</option>`).join('');
+}
+
+async function trocarEmpresa(id){empresaAtiva=id;await loadAllData();navigate(document.querySelector('.view.active')?.id?.replace('view-','')||'dashboard')}
 
 const HISTORY_KEY='zahi_history'
 
@@ -1523,11 +1564,11 @@ function clearHistory(){if(!confirm('Limpar todo o histórico?'))return;localSto
 
 function renderHistorico(){const tipo=document.getElementById('filter-hist-tipo')?.value||'';const hist=getHistory();const filt=hist.filter(h=>!tipo||h.action===tipo);const el=document.getElementById('historico-list');if(!filt.length){el.innerHTML='<div style="text-align:center;padding:48px;color:var(--t3);font-size:13px">Nenhum registro de alteração encontrado.</div>';return}const icons={criado:'✅',editado:'✏️',excluido:'🗑️',pago:'✓'};const colors={criado:'var(--greenD)',editado:'var(--blueD)',excluido:'var(--redD)',pago:'var(--purpleD)'};el.innerHTML=filt.map(h=>{const d=new Date(h.ts);const timeStr=d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});return `<div class="history-item" style="background:${colors[h.action]||'var(--bg2)'}"><div class="history-icon">${icons[h.action]||'•'}</div><div class="history-info"><div class="history-action">${h.descricao}</div><div class="history-detail">${h.tipo==='receita'?'📥 Receita':'📤 Despesa'} · ${h.valor?fmt(h.valor):''} · ${h.user}</div></div><div class="history-time">${timeStr}</div></div>`}).join('')}
 
-async function addReceita(item){const{data,error}=await sb.from('receitas').insert({user_id:currentUser.id,...item}).select().single();if(error){alert('Erro: '+error.message);return null}receitas.unshift(data);addHistory('criado','receita',`Receita criada: ${data.descricao||''}`,data.valor);return data}
+async function addReceita(item){const{data,error}=await sb.from('receitas').insert({empresa_id:empresaAtiva,...item}).select().single();if(error){alert('Erro: '+error.message);return null}receitas.unshift(data);addHistory('criado','receita',`Receita criada: ${data.descricao||''}`,data.valor);return data}
 
 async function removeReceita(id){const{error}=await sb.from('receitas').delete().eq('id',id);if(error){alert('Erro: '+error.message);return}const removed=receitas.find(r=>r.id===id);receitas=receitas.filter(r=>r.id!==id);if(removed)addHistory('excluido','receita',`Receita excluída: ${removed.descricao||''}`,removed.valor);renderReceitas()}
 
-async function addDespesa(item){const{data,error}=await sb.from('despesas').insert({user_id:currentUser.id,...item}).select().single();if(error){alert('Erro: '+error.message);return null}despesas.unshift(data);addHistory('criado','despesa',`Despesa criada: ${data.descricao||''}`,data.valor);return data}
+async function addDespesa(item){const{data,error}=await sb.from('despesas').insert({empresa_id:empresaAtiva,...item}).select().single();if(error){alert('Erro: '+error.message);return null}despesas.unshift(data);addHistory('criado','despesa',`Despesa criada: ${data.descricao||''}`,data.valor);return data}
 
 async function removeDespesa(id){const{error}=await sb.from('despesas').delete().eq('id',id);if(error){alert('Erro: '+error.message);return}despesas=despesas.filter(d=>d.id!==id);renderDespesas()}
 
@@ -1665,7 +1706,7 @@ function handleOverlayClick(e,id){if(e.target.id===id)closeModal(id)}
 
 async function saveTransaction(){const isR=currentModalType==='receita';const pessoa=document.getElementById('form-pessoa').value.trim();const descricao=document.getElementById('form-descricao').value.trim();const valor=parseFloat(document.getElementById('form-valor').value)||0;if(!pessoa||!descricao||!valor){alert('Preencha todos os campos obrigatórios.');return}const btn=document.getElementById('modal-save-btn');btn.textContent='Salvando...';btn.disabled=true;const baseItem={data:document.getElementById('form-data').value,classificacao:document.getElementById('form-classificacao').value,forma:document.getElementById('form-forma').value,status:document.getElementById('form-status').value,descricao,valor,tipo:currentTipo,[isR?'cliente':'fornecedor']:pessoa};if(editingId){const result=isR?await updateReceita(editingId,baseItem):await updateDespesa(editingId,baseItem);if(result){closeModal('modal-overlay');if(isR)renderReceitas();else renderDespesas()}btn.textContent='Salvar Alterações';btn.disabled=false;return}if(currentTipo==='provisionado'){const meses=parseInt(document.getElementById('form-prov-meses').value)||1;const baseDate=new Date(baseItem.data+'T12:00:00');let allOk=true;for(let i=0;i<meses;i++){const d=new Date(baseDate);d.setMonth(d.getMonth()+i);const dateStr=d.toISOString().split('T')[0];const item={...baseItem,data:dateStr};const result=isR?await addReceita(item):await addDespesa(item);if(!result)allOk=false}if(allOk){closeModal('modal-overlay');navigate(isR?'receitas':'despesas');alert(`✅ ${meses} lançamento${meses>1?'s':''} provisionado${meses>1?'s':''} criado${meses>1?'s':''}!`)}}else{const result=isR?await addReceita(baseItem):await addDespesa(baseItem);if(result){closeModal('modal-overlay');navigate(isR?'receitas':'despesas')}}btn.textContent='Salvar Lançamento';btn.disabled=false}
 
-async function enterApp(){document.getElementById('auth-screen').style.display='none';await loadAllData();const email=currentUser?.email||'';const name=currentUser?.user_metadata?.nome||email.split('@')[0];document.getElementById('user-name').textContent=name;document.getElementById('user-avatar').textContent=name.charAt(0).toUpperCase();const dateOpts={weekday:'long',year:'numeric',month:'long',day:'numeric'};document.getElementById('topbar-sub').textContent=NOW.toLocaleDateString('pt-BR',dateOpts);document.getElementById('period-badge').textContent=MONTH_NAMES[NOW.getMonth()]+' '+CUR_YEAR;selectedMonthsRec=[CUR_MONTH_KEY];selectedMonthsDesp=[CUR_MONTH_KEY];selectedMonthsDash=[CUR_MONTH_KEY];selectedMonthsReceber=[];selectedMonthsPagar=[];showFAB();navigate('dashboard');setTimeout(checkOnboarding,800)}
+async function enterApp(){document.getElementById('auth-screen').style.display='none';await loadAllData();const email=currentUser?.email||'';const name=perfilData?.nome||currentUser?.user_metadata?.nome||email.split('@')[0];document.getElementById('user-name').textContent=name;document.getElementById('user-avatar').textContent=name.charAt(0).toUpperCase();const dateOpts={weekday:'long',year:'numeric',month:'long',day:'numeric'};document.getElementById('topbar-sub').textContent=NOW.toLocaleDateString('pt-BR',dateOpts);document.getElementById('period-badge').textContent=MONTH_NAMES[NOW.getMonth()]+' '+CUR_YEAR;selectedMonthsRec=[CUR_MONTH_KEY];selectedMonthsDesp=[CUR_MONTH_KEY];selectedMonthsDash=[CUR_MONTH_KEY];selectedMonthsReceber=[];selectedMonthsPagar=[];showFAB();navigate('dashboard');setTimeout(checkOnboarding,800)}
   updateEyeIcon()
 
 async function init(){initTheme();const hash=window.location.hash;const isRecovery=hash.includes('type=recovery')||hash.includes('access_token');if(isRecovery){document.getElementById('auth-screen').style.display='flex';setTimeout(()=>setAuthMode('reset'),500);return}try{const{data:{session}}=await sb.auth.getSession();if(session){currentUser=session.user;await enterApp()}else{document.getElementById('auth-screen').style.display='flex'}}catch(e){document.getElementById('auth-screen').style.display='flex';showAuthMsg('Erro ao conectar. Verifique sua internet e recarregue.','error')}sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'){document.getElementById('app-screen').style.display='none';document.getElementById('auth-screen').style.display='flex'}if(event==='PASSWORD_RECOVERY'){document.getElementById('auth-screen').style.display='flex';document.getElementById('app-screen').style.display='none';setAuthMode('reset')}})}
