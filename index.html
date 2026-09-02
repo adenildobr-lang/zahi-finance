@@ -1887,13 +1887,14 @@ const NAV_ITEMS=[
   {view:'recorrencias',label:'Recorrências',icon:'🔄'},
   {view:'historico',label:'Histórico',icon:'🕐'},
   {view:'config',label:'Configurações',icon:'⚙️'},
+  {view:'__theme__',label:'Alternar Tema (Claro/Escuro)',icon:'🌗'},
   {view:'__logout__',label:'Sair',icon:'🚪'},
 ]
 function buildMobileNav(){
   const container=document.getElementById('mobile-nav-items')
   if(!container||container.children.length>0)return
   container.innerHTML=NAV_ITEMS.map(n=>`
-    <div onclick="${n.view==='__logout__'?'logout()':'navigate(\''+n.view+'\')' };closeMobileNav()" style="display:flex;align-items:center;gap:14px;padding:11px 20px;cursor:pointer;border-radius:10px;margin:0 8px;transition:background .15s;${n.view==='__logout__'?'border-top:1px solid var(--border);margin-top:8px;padding-top:14px':''}" onmouseover="this.style.background='var(--blueDD)'" onmouseout="this.style.background='transparent'">
+    <div onclick="${n.view==='__logout__'?'logout()':n.view==='__theme__'?'toggleTheme()':'navigate(\''+n.view+'\')' };closeMobileNav()" style="display:flex;align-items:center;gap:14px;padding:11px 20px;cursor:pointer;border-radius:10px;margin:0 8px;transition:background .15s;${n.view==='__logout__'?'border-top:1px solid var(--border);margin-top:8px;padding-top:14px':''}" onmouseover="this.style.background='var(--blueDD)'" onmouseout="this.style.background='transparent'">
       <span style="font-size:17px;width:22px;text-align:center">${n.icon}</span>
       <span style="font-size:13px;font-weight:500;color:${n.view==='__logout__'?'var(--red)':'var(--t1)'}">${n.label}</span>
     </div>`).join('')
