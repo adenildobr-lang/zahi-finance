@@ -68,11 +68,15 @@
 
 body{font-family:'Sora',sans-serif;background:var(--bg0);color:var(--t1);height:100vh;overflow:hidden;transition:background .3s,color .3s;}
 
-::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar{width:8px;height:8px;}
 
-::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:4px;}
 
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+
+::-webkit-scrollbar-thumb:hover{background:var(--t3);}
+
+* { scrollbar-width: thin; scrollbar-color: var(--border2) rgba(255,255,255,.04); }
 
 /* AUTH */
 
@@ -515,10 +519,10 @@ tr:hover td{background:var(--blueDD);}
 
   #sidebar.mobile-open{transform:translateX(0);}
 
-  /* Main area ocupa 100% da tela */
-  #main-area{width:100%;}
+  /* Main area ocupa 100% da tela e permite scroll vertical */
+  #main-area{width:100%;max-width:100vw;overflow:hidden;}
 
-  #content{padding:12px;}
+  #content{padding:12px;max-width:100vw;overflow-x:hidden;overflow-y:auto;}
 
   /* KPI grids em 2 colunas */
   .kpi-grid,.kpi-grid-4{grid-template-columns:repeat(2,1fr);gap:8px;}
@@ -562,6 +566,12 @@ tr:hover td{background:var(--blueDD);}
 
   /* Tabelas com scroll horizontal */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* Conter tudo dentro do viewport */
+  .card,.chart-card,.exec-kpi-card,.kpi-card{max-width:100%;min-width:0;}
+  canvas{max-width:100%!important;}
+  .chart-wrap,.chart-area{overflow-x:hidden;}
+  img,svg{max-width:100%;height:auto;}
 
   /* Cards com padding menor */
   .card-pad{padding:14px;}
