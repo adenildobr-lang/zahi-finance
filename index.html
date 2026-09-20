@@ -1785,9 +1785,10 @@ async function loadAllData(){document.getElementById('loading-screen').style.dis
   let qr=sb.from('receitas').select('*').order('data',{ascending:false});
   let qd=sb.from('despesas').select('*').order('data',{ascending:false});
   let qrc=sb.from('recorrencias').select('*').order('criado_em',{ascending:false});
-  if(empresaAtiva){qr=qr.eq('empresa_id',empresaAtiva);qd=qd.eq('empresa_id',empresaAtiva);qrc=qrc.eq('empresa_id',empresaAtiva)}
-  const[{data:r},{data:d},{data:rc}]=await Promise.all([qr,qd,qrc]);
-  receitas=r||[];despesas=d||[];classificacoesCustom=[];recorrencias=rc||[];
+  let qcl=sb.from('classificacoes').select('*').order('nome');
+  if(empresaAtiva){qr=qr.eq('empresa_id',empresaAtiva);qd=qd.eq('empresa_id',empresaAtiva);qrc=qrc.eq('empresa_id',empresaAtiva);qcl=qcl.eq('empresa_id',empresaAtiva)}
+  const[{data:r},{data:d},{data:rc},{data:cl}]=await Promise.all([qr,qd,qrc,qcl]);
+  receitas=r||[];despesas=d||[];classificacoesCustom=cl||[];recorrencias=rc||[];
   await processRecorrencias();document.getElementById('loading-screen').style.display='none';document.getElementById('app-screen').style.display='flex'
 }
 
@@ -1945,7 +1946,7 @@ function openClassifModal(){editingClassifId=null;document.getElementById('class
 
 function editClassif(id){const c=classificacoesCustom.find(x=>x.id===id);if(!c)return;editingClassifId=id;document.getElementById('classif-nome').value=c.nome;document.getElementById('classif-tipo').value=c.tipo;document.getElementById('classif-edit-id').value=id;document.getElementById('classif-modal-title').textContent='Editar Classificação';document.getElementById('classif-save-btn').textContent='Atualizar';document.getElementById('modal-classif').classList.add('open')}
 
-async function saveClassificacao(){const nome=document.getElementById('classif-nome').value.trim();const tipo=document.getElementById('classif-tipo').value;const editId=document.getElementById('classif-edit-id').value;if(!nome){alert('Informe o nome da classificação.');return}const btn=document.getElementById('classif-save-btn');btn.disabled=true;btn.textContent='Salvando...';if(editId){const{data,error}=await sb.from('classificacoes').update({nome,tipo}).eq('id',editId).select().single();if(error){alert('Erro: '+error.message)}else{classificacoesCustom=classificacoesCustom.map(c=>c.id===editId?data:c);renderClassifList();closeModal('modal-classif');alert('✅ Classificação atualizada!')}}else{const{data,error}=await sb.from('classificacoes').insert({user_id:currentUser.id,nome,tipo}).select().single();if(error){alert('Erro: '+error.message)}else{classificacoesCustom.push(data);classificacoesCustom.sort((a,b)=>a.nome.localeCompare(b.nome));renderClassifList();closeModal('modal-classif');alert('✅ Classificação criada!')}}btn.disabled=false;btn.textContent=editId?'Atualizar':'Salvar'}
+async function saveClassificacao(){const nome=document.getElementById('classif-nome').value.trim();const tipo=document.getElementById('classif-tipo').value;const editId=document.getElementById('classif-edit-id').value;if(!nome){alert('Informe o nome da classificação.');return}const btn=document.getElementById('classif-save-btn');btn.disabled=true;btn.textContent='Salvando...';if(editId){const{data,error}=await sb.from('classificacoes').update({nome,tipo}).eq('id',editId).select().single();if(error){alert('Erro: '+error.message)}else{classificacoesCustom=classificacoesCustom.map(c=>c.id===editId?data:c);renderClassifList();closeModal('modal-classif');alert('✅ Classificação atualizada!')}}else{const{data,error}=await sb.from('classificacoes').insert({empresa_id:empresaAtiva,nome,tipo}).select().single();if(error){alert('Erro: '+error.message)}else{classificacoesCustom.push(data);classificacoesCustom.sort((a,b)=>a.nome.localeCompare(b.nome));renderClassifList();closeModal('modal-classif');alert('✅ Classificação criada!')}}btn.disabled=false;btn.textContent=editId?'Atualizar':'Salvar'}
 
 async function deleteClassif(id){if(!confirm('Excluir esta classificação?'))return;const{error}=await sb.from('classificacoes').delete().eq('id',id);if(error){alert('Erro: '+error.message);return}classificacoesCustom=classificacoesCustom.filter(c=>c.id!==id);renderClassifList()}
 
