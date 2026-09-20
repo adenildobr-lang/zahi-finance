@@ -1811,7 +1811,7 @@ function clearHistory(){if(!confirm('Limpar todo o histórico?'))return;localSto
 
 function renderHistorico(){const tipo=document.getElementById('filter-hist-tipo')?.value||'';const hist=getHistory();const filt=hist.filter(h=>!tipo||h.action===tipo);const el=document.getElementById('historico-list');if(!filt.length){el.innerHTML='<div style="text-align:center;padding:48px;color:var(--t3);font-size:13px">Nenhum registro de alteração encontrado.</div>';return}const icons={criado:'✅',editado:'✏️',excluido:'🗑️',pago:'✓'};const colors={criado:'var(--greenD)',editado:'var(--blueD)',excluido:'var(--redD)',pago:'var(--purpleD)'};el.innerHTML=filt.map(h=>{const d=new Date(h.ts);const timeStr=d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});return `<div class="history-item" style="background:${colors[h.action]||'var(--bg2)'}"><div class="history-icon">${icons[h.action]||'•'}</div><div class="history-info"><div class="history-action">${h.descricao}</div><div class="history-detail">${h.tipo==='receita'?'📥 Receita':'📤 Despesa'} · ${h.valor?fmt(h.valor):''} · ${h.user}</div></div><div class="history-time">${timeStr}</div></div>`}).join('')}
 
-async function addReceita(item){const{data,error}=await sb.from('receitas').insert({empresa_id:empresaAtiva,...item}).select().single();if(error){alert('Erro: '+error.message);return null}receitas.unshift(data);addHistory('criado','receita',`Receita criada: ${data.descricao||''}`,data.valor);return data}
+async function addReceita(item){const{forma:_,...itemSemForma}=item;const{data,error}=await sb.from('receitas').insert({empresa_id:empresaAtiva,...itemSemForma}).select().single();if(error){alert('Erro: '+error.message);return null}receitas.unshift(data);addHistory('criado','receita',`Receita criada: ${data.descricao||''}`,data.valor);return data}
 
 async function removeReceita(id){const{error}=await sb.from('receitas').delete().eq('id',id);if(error){alert('Erro: '+error.message);return}const removed=receitas.find(r=>r.id===id);receitas=receitas.filter(r=>r.id!==id);if(removed)addHistory('excluido','receita',`Receita excluída: ${removed.descricao||''}`,removed.valor);renderReceitas()}
 
@@ -1819,7 +1819,7 @@ async function addDespesa(item){const{data,error}=await sb.from('despesas').inse
 
 async function removeDespesa(id){const{error}=await sb.from('despesas').delete().eq('id',id);if(error){alert('Erro: '+error.message);return}despesas=despesas.filter(d=>d.id!==id);renderDespesas()}
 
-async function updateReceita(id,changes){const{data,error}=await sb.from('receitas').update(changes).eq('id',id).select().single();if(error){alert('Erro ao atualizar: '+error.message);return null}receitas=receitas.map(r=>r.id===id?data:r);addHistory('editado','receita',`Receita editada: ${data.descricao||''}`,data.valor);return data}
+async function updateReceita(id,changes){const{forma:_,...changesSemForma}=changes;const{data,error}=await sb.from('receitas').update(changesSemForma).eq('id',id).select().single();if(error){alert('Erro ao atualizar: '+error.message);return null}receitas=receitas.map(r=>r.id===id?data:r);addHistory('editado','receita',`Receita editada: ${data.descricao||''}`,data.valor);return data}
 
 async function updateDespesa(id,changes){const{data,error}=await sb.from('despesas').update(changes).eq('id',id).select().single();if(error){alert('Erro ao atualizar: '+error.message);return null}despesas=despesas.map(d=>d.id===id?data:d);addHistory('editado','despesa',`Despesa editada: ${data.descricao||''}`,data.valor);return data}
 
