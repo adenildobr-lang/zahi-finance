@@ -1778,7 +1778,7 @@ async function loadAllData(){document.getElementById('loading-screen').style.dis
     if(!empresaAtiva&&empresasList.length)empresaAtiva=empresasList[0].id;
     renderEmpresaSelector();
   }else{
-    empresaAtiva=prof?.empresa_id||null;
+    empresaAtiva=prof?.empresa_id||perfCfg?.empresa_id||null;
     document.getElementById('empresa-selector-wrap').style.display='none';
   }
   // Carrega dados filtrados pela empresa ativa (RLS + filtro explícito)
@@ -1888,6 +1888,11 @@ function setQEType(type){
 async function saveQuickEntry(){
   const valor=parseFloat(document.getElementById('qe-valor').value)||0
   const descricao=document.getElementById('qe-descricao').value.trim()
+  if(!empresaAtiva){
+    document.getElementById('qe-msg').style.color='var(--red)'
+    document.getElementById('qe-msg').textContent='Sessão expirada. Recarregue a página.'
+    return
+  }
   if(!valor||!descricao){
     document.getElementById('qe-msg').style.color='var(--red)'
     document.getElementById('qe-msg').textContent='Preencha o valor e a descrição.'
