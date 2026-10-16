@@ -2,8 +2,8 @@ name: Supabase Keep-Alive
 
 on:
   schedule:
-    # Roda a cada 3 dias às 08:00 (horário UTC = 05:00 Maceió)
-    - cron: '0 8 */3 * *'
+    # Roda a cada 2 dias às 08:00 (horário UTC = 05:00 Maceió)
+    - cron: '0 8 */2 * *'
   workflow_dispatch: # permite rodar manualmente se precisar
 
 jobs:
@@ -12,13 +12,14 @@ jobs:
     steps:
       - name: Ping Supabase para manter projeto ativo
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
             "https://akidrowkposfyphfkklq.supabase.co/rest/v1/empresas?select=id&limit=1" \
             -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraWRyb3drcG9zZnlwaGZra2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNjQyMDIsImV4cCI6MjA5OTg0MDIwMn0.GdSpF1nPdz3AYXWLJr2kas8g2aTkRegakbh72JxkwRk" \
-            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraWRyb3drcG9zZnlwaGZra2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNjQyMDIsImV4cCI6MjA5OTg0MDIwMn0.GdSpF1nPdz3AYXWLJr2kas8g2aTkRegakbh72JxkwRk")
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraWRyb3drcG9zZnlwaGZra2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNjQyMDIsImV4cCI6MjA5OTg0MDIwMn0.GdSpF1nPdz3AYXWLJr2kas8g2aTkRegakbh72JxkwRk" \
+            2>/dev/null) || STATUS="erro"
           echo "Supabase respondeu com status: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "Aviso: resposta inesperada ($STATUS) — verifique o projeto no Supabase"
-          else
+          if [ "$STATUS" = "200" ]; then
             echo "OK — projeto ativo"
+          else
+            echo "Aviso: resposta inesperada ($STATUS) — pode estar pausado"
           fi
