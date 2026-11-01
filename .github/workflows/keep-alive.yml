@@ -1,25 +1,87 @@
-name: Supabase Keep-Alive
+name: Supabase Keep-Alive e Backup
 
 on:
   schedule:
-    # Roda a cada 2 dias às 08:00 (horário UTC = 05:00 Maceió)
+    # Roda a cada 2 dias às 08:00 UTC (05:00 Maceió)
     - cron: '0 8 */2 * *'
-  workflow_dispatch: # permite rodar manualmente se precisar
+  workflow_dispatch: # permite rodar manualmente
 
 jobs:
-  ping:
+  ping-e-backup:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Supabase para manter projeto ativo
+        env:
+          ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
             "https://akidrowkposfyphfkklq.supabase.co/rest/v1/empresas?select=id&limit=1" \
-            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraWRyb3drcG9zZnlwaGZra2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNjQyMDIsImV4cCI6MjA5OTg0MDIwMn0.GdSpF1nPdz3AYXWLJr2kas8g2aTkRegakbh72JxkwRk" \
-            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraWRyb3drcG9zZnlwaGZra2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNjQyMDIsImV4cCI6MjA5OTg0MDIwMn0.GdSpF1nPdz3AYXWLJr2kas8g2aTkRegakbh72JxkwRk" \
+            -H "apikey: ${ANON_KEY}" \
+            -H "Authorization: Bearer ${ANON_KEY}" \
             2>/dev/null) || STATUS="erro"
           echo "Supabase respondeu com status: $STATUS"
           if [ "$STATUS" = "200" ]; then
             echo "OK — projeto ativo"
           else
             echo "Aviso: resposta inesperada ($STATUS) — pode estar pausado"
+          fi
+
+      - name: Verificar se é sexta-feira (dia de backup)
+        id: check_day
+        run: |
+          DAY=$(date +%u)
+          if [ "$DAY" = "5" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run_backup=true" >> $GITHUB_OUTPUT
+            echo "Backup será executado hoje"
+          else
+            echo "run_backup=false" >> $GITHUB_OUTPUT
+            echo "Backup não roda hoje (só às sextas)"
+          fi
+
+      - name: Checkout do repositório
+        if: steps.check_day.outputs.run_backup == 'true'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Exportar dados do Supabase
+        if: steps.check_day.outputs.run_backup == 'true'
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          mkdir -p backups
+          BASE="https://akidrowkposfyphfkklq.supabase.co/rest/v1"
+          DATA=$(date +%Y-%m-%d)
+          ARQUIVO="backups/backup_${DATA}.json"
+
+          echo "{\"data_backup\": \"${DATA}\"" > "$ARQUIVO"
+
+          for TABELA in empresas profiles perfis receitas despesas recorrencias classificacoes; do
+            DADOS=$(curl -s --max-time 30 \
+              "${BASE}/${TABELA}?select=*" \
+              -H "apikey: ${SUPABASE_SERVICE_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+              2>/dev/null) || DADOS="[]"
+            printf ', "%s": %s' "$TABELA" "$DADOS" >> "$ARQUIVO"
+          done
+
+          echo "}" >> "$ARQUIVO"
+          echo "Backup salvo: $(wc -c < "$ARQUIVO") bytes"
+
+      - name: Manter apenas os últimos 8 backups
+        if: steps.check_day.outputs.run_backup == 'true'
+        run: |
+          ls -t backups/backup_*.json 2>/dev/null | tail -n +9 | xargs -r rm -f
+
+      - name: Commit do backup
+        if: steps.check_day.outputs.run_backup == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backups/
+          if git diff --staged --quiet; then
+            echo "Dados sem alteração desde o último backup"
+          else
+            git commit -m "backup: dados Supabase $(date +%Y-%m-%d)"
+            git push
           fi
